@@ -1,5 +1,5 @@
-use std::path::Path;
 use serde::Deserialize;
+use std::path::Path;
 
 #[derive(Debug, Deserialize)]
 pub struct Calibration {
@@ -47,13 +47,15 @@ pub struct Values {
     pub offsets: Vec<f64>,
 }
 
-pub fn read_calibtations<I: AsRef<Path>>(path: I) -> Result<Calibration, Box<dyn std::error::Error>> {
+pub fn read_calibtations<I: AsRef<Path>>(
+    path: I,
+) -> Result<Calibration, Box<dyn std::error::Error>> {
     Ok(toml::from_str(&std::fs::read_to_string(path)?)?)
 }
 
 #[cfg(test)]
 mod models_tests {
-    use crate::models::{read_calibtations};
+    use crate::models::read_calibtations;
 
     #[test]
     fn deserialize() -> Result<(), Box<dyn std::error::Error>> {
