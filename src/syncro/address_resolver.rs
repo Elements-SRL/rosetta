@@ -1,6 +1,5 @@
 use crate::{
     calibration_kind::{CalibrationKind, CalibrationObject},
-    models::{Board, RangeBlock, RangeSamplingRate, SamplingRate},
 };
 
 fn sr_id_to_clock_div(sr_id: u32) -> u16 {
@@ -44,6 +43,10 @@ fn get_bit_7_6_5(ck: &CalibrationKind, sr_id: u32, range_id: u32, co: Calibratio
     p & 0xE0
 }
 
+fn get_bit_4_3_2_1(ch_idx: u16) -> u16 {
+    ch_idx << 1 & 0x1E
+}
+
 // pub fn resolve(ck: CalibrationKind, rb: RangeBlock) -> u16 {
 // }
 
@@ -51,7 +54,7 @@ fn get_bit_7_6_5(ck: &CalibrationKind, sr_id: u32, range_id: u32, co: Calibratio
 mod address_resolver_test {
     use crate::{
         calibration_kind::{CalibrationKind, CalibrationObject},
-        syncro::address_resolver::{get_bit_7_6_5, get_bit_9_8, get_bit_10},
+        syncro::address_resolver::{get_bit_4_3_2_1, get_bit_7_6_5, get_bit_9_8, get_bit_10},
     };
     const R0: core::ops::Range<u32> = 0..1;
     const R1: core::ops::Range<u32> = 1..2;
@@ -94,8 +97,11 @@ mod address_resolver_test {
 
     #[test]
     fn test_get_bit_9_8() {
-        vec![(0, 0), (1, 0x100), (2, 0x200), (3, 0x300)].into_iter()
-        .for_each(|(range_id, res)| assert_eq!(get_bit_9_8(CalibrationKind::CurrentAdc, range_id), res));
+        vec![(0, 0), (1, 0x100), (2, 0x200), (3, 0x300)]
+            .into_iter()
+            .for_each(|(range_id, res)| {
+                assert_eq!(get_bit_9_8(CalibrationKind::CurrentAdc, range_id), res)
+            });
         assert_eq!(get_bit_9_8(CalibrationKind::VoltageAdc, 0), 0);
         assert_eq!(get_bit_9_8(CalibrationKind::VoltageDac, 0), 0x100);
         assert_eq!(get_bit_9_8(CalibrationKind::CurrentDac, 0), 0x100);
@@ -165,5 +171,10 @@ mod address_resolver_test {
         bit_7_6_5_helper(R0_5, R2, rsc, CalibrationObject::Offset, 0xC0);
         bit_7_6_5_helper(R0_5, R3, rsc, CalibrationObject::Gain, 0xE0);
         bit_7_6_5_helper(R0_5, R3, rsc, CalibrationObject::Offset, 0xE0);
+    }
+
+    #[test]
+    fn test_get_bit_4_3_2_1() {
+        (0..16).for_each(|ch| assert_eq!(get_bit_4_3_2_1(ch), ch * 2))
     }
 }
