@@ -1,6 +1,6 @@
 use tracing::instrument;
 use crate::{
-    calibration_kind::{CalibrationKind, CalibrationObject}, e384_commands::{get_ram, write_u8}, models::{Board, Calibration, RangeBlock, read_calibtations}, syncro::{address_resolver::resolve, dev_ram::Ram}, util::divide,
+    calibration_kind::{CalibrationKind, CalibrationObject}, e384_commands::{get_ram, set_ram, write_all_eeproms, write_u8}, models::{Board, Calibration, RangeBlock, read_calibtations}, syncro::{address_resolver::resolve, dev_ram::Ram}, util::divide,
 };
 use std::path::Path;
 
@@ -12,16 +12,13 @@ const BOARDS: u32 = 24;
 
 pub struct SyncroV1 {
     calibration: Calibration,
-    rams: Vec<Ram>,
 }
 
 impl SyncroV1 {
     pub fn from_file<I: AsRef<Path>>(path: I) -> Result<Self, Box<dyn std::error::Error>> {
         let calibration = read_calibtations(path)?;
-        let rams = (0..BOARDS).map(Ram::new).collect();
-        Ok(Self { calibration, rams })
+        Ok(Self { calibration })
     }
-
 
     #[instrument]
     fn apply_calib_step(rbs: Vec<RangeBlock>, ck: CalibrationKind) {
@@ -63,18 +60,25 @@ impl SyncroV1 {
                 }
             });
         });
-        todo!()
     }
 
-    fn apply_board(board: &Board) -> Ram {
+    #[instrument]
+    fn apply_board(board: Board) {
         let bn = board.board_number;
-
-        let ram_content: [u8; 2048] = get_ram(bn);
-        todo!()
+        get_ram(bn);
+        SyncroV1::apply_calib_step(board.current_adc, CalibrationKind::CurrentAdc);
+        SyncroV1::apply_calib_step(board.current_dac, CalibrationKind::CurrentDac);
+        SyncroV1::apply_calib_step(board.voltage_adc, CalibrationKind::VoltageAdc);
+        SyncroV1::apply_calib_step(board.voltage_dac, CalibrationKind::VoltageDac);
+        SyncroV1::apply_calib_step(board.shunt_resistance, CalibrationKind::ShuntResistance);
+        SyncroV1::apply_calib_step(board.rs_correction, CalibrationKind::RsCorrection);
     }
 
-    pub fn calib_to_ram(&self, board_number: u32) -> Option<Ram> {
-        let boards = &self.calibration.boards;
-        todo!()
+    pub fn apply_complete_calibration(self) {
+        self.calibration.boards.into_iter().for_each(|b| {
+            set_ram(b.board_number);
+            SyncroV1::apply_board(b);
+        });
+        write_all_eeproms();
     }
 }

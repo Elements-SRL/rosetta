@@ -8,13 +8,19 @@ pub fn read_eeprom() {
 }
 
 #[instrument]
-pub fn get_ram(board_number: u32) -> [u8; 2048] {
+pub fn get_ram(board_number: u32) {
     // trigger per inviare il contenuto di una ram al pc (trigger 7, viene inviato il contenuto di una sola ram).
     // In particolare, viene usato sempre il campo ram_cs per selezionare quale ram inviare.
     // Se ram_cs contiene piu di un bit alto, il contenuto inviato al pc non ha senso.
     tracing::info!("ram has been read");
-    // STUBBED VALUE
-    [0; 2048]
+}
+
+#[instrument]
+pub fn set_ram(board_number: u32) {
+    // trigger per inviare il contenuto di una ram al pc (trigger 7, viene inviato il contenuto di una sola ram).
+    // In particolare, viene usato sempre il campo ram_cs per selezionare quale ram inviare.
+    // Se ram_cs contiene piu di un bit alto, il contenuto inviato al pc non ha senso.
+    tracing::info!("ram has been set to work with");
 }
 
 #[instrument]
@@ -23,6 +29,14 @@ pub fn write_u8(address: u16, value: u8) {
     // In particolare, viene usato sempre il campo ram_cs per selezionare quale ram inviare.
     // Se ram_cs contiene piu di un bit alto, il contenuto inviato al pc non ha senso.
     tracing::trace!("writing...");
+}
+
+#[instrument]
+pub fn write_all_eeproms() {
+    // trigger per inviare il contenuto di una ram al pc (trigger 7, viene inviato il contenuto di una sola ram).
+    // In particolare, viene usato sempre il campo ram_cs per selezionare quale ram inviare.
+    // Se ram_cs contiene piu di un bit alto, il contenuto inviato al pc non ha senso.
+    tracing::trace!("writing all eeproms to apply calibrations");
 }
 
 #[cfg(test)]
