@@ -1,5 +1,6 @@
 use crate::{
-    calibration_kind::{CalibrationKind, CalibrationObject}, util::{Lsb, Msb},
+    calibration_kind::{CalibrationKind, CalibrationObject},
+    util::{Lsb, Msb},
 };
 
 fn sr_id_to_clock_div(sr_id: u16) -> u16 {
@@ -30,15 +31,14 @@ fn get_bit_9_8(ck: CalibrationKind, range_id: u16) -> u16 {
 
 fn get_bit_7_6_5(ck: CalibrationKind, sr_id: u16, range_id: u16, co: CalibrationObject) -> u16 {
     let cb = calibration_object_to_bit(co);
-    let r_u16 = range_id as u16;
     let p = match ck {
         CalibrationKind::CurrentAdc | CalibrationKind::VoltageAdc => {
             sr_id_to_clock_div(sr_id) << 6 | cb << 5
         }
         CalibrationKind::VoltageDac => cb << 5,
-        CalibrationKind::CurrentDac => 0x80 | r_u16 << 6 | cb << 5,
-        CalibrationKind::ShuntResistance => r_u16 << 5,
-        CalibrationKind::RsCorrection => 0x80 | r_u16 << 5,
+        CalibrationKind::CurrentDac => 0x80 | range_id << 6 | cb << 5,
+        CalibrationKind::ShuntResistance => range_id << 5,
+        CalibrationKind::RsCorrection => 0x80 | range_id << 5,
     };
     p & 0xE0
 }
@@ -47,7 +47,13 @@ fn get_bit_4_3_2_1(ch_idx: u16) -> u16 {
     ch_idx << 1 & 0x1E
 }
 
-pub fn resolve(ck: CalibrationKind, range_id: u32, sr_id: u32, co: CalibrationObject, ch_idx: u16) -> (Lsb<u16>, Msb<u16>) {
+pub fn resolve(
+    ck: CalibrationKind,
+    range_id: u32,
+    sr_id: u32,
+    co: CalibrationObject,
+    ch_idx: u16,
+) -> (Lsb<u16>, Msb<u16>) {
     let range_id = range_id as u16;
     let sr_id = sr_id as u16;
     let b10 = get_bit_10(ck);
@@ -55,7 +61,7 @@ pub fn resolve(ck: CalibrationKind, range_id: u32, sr_id: u32, co: CalibrationOb
     let b_7_6_5 = get_bit_7_6_5(ck, sr_id, range_id, co);
     let b4_3_2_1 = get_bit_4_3_2_1(ch_idx);
     let address = b10 | b9_8 | b_7_6_5 | b4_3_2_1;
-    (Lsb(address), Msb(address | 1) )
+    (Lsb(address), Msb(address | 1))
 }
 
 #[cfg(test)]
