@@ -1,8 +1,8 @@
 use crate::{
-    calibration_kind::{CalibrationKind, CalibrationObject},
+    calibration_kind::{CalibrationKind, CalibrationObject}, util::{Lsb, Msb},
 };
 
-fn sr_id_to_clock_div(sr_id: u32) -> u16 {
+fn sr_id_to_clock_div(sr_id: u16) -> u16 {
     if sr_id < 3 { 2 } else { 1 }
 }
 
@@ -28,7 +28,7 @@ fn get_bit_9_8(ck: CalibrationKind, range_id: u16) -> u16 {
     p & 0x300
 }
 
-fn get_bit_7_6_5(ck: &CalibrationKind, sr_id: u32, range_id: u32, co: CalibrationObject) -> u16 {
+fn get_bit_7_6_5(ck: CalibrationKind, sr_id: u16, range_id: u16, co: CalibrationObject) -> u16 {
     let cb = calibration_object_to_bit(co);
     let r_u16 = range_id as u16;
     let p = match ck {
@@ -47,8 +47,14 @@ fn get_bit_4_3_2_1(ch_idx: u16) -> u16 {
     ch_idx << 1 & 0x1E
 }
 
-// pub fn resolve(ck: CalibrationKind, rb: RangeBlock) -> u16 {
-// }
+pub fn resolve(ck: CalibrationKind, range_id: u16, sr_id: u16, co: CalibrationObject, ch_idx: u16) -> (Lsb<u16>, Msb<u16>) {
+    let b10 = get_bit_10(ck);
+    let b9_8 = get_bit_9_8(ck, range_id);
+    let b_7_6_5 = get_bit_7_6_5(ck, sr_id, range_id, co);
+    let b4_3_2_1 = get_bit_4_3_2_1(ch_idx);
+    let address = b10 | b9_8 | b_7_6_5 | b4_3_2_1;
+    (Lsb(address), Msb(address | 1) )
+}
 
 #[cfg(test)]
 mod address_resolver_test {
@@ -56,19 +62,19 @@ mod address_resolver_test {
         calibration_kind::{CalibrationKind, CalibrationObject},
         syncro::address_resolver::{get_bit_4_3_2_1, get_bit_7_6_5, get_bit_9_8, get_bit_10},
     };
-    const R0: core::ops::Range<u32> = 0..1;
-    const R1: core::ops::Range<u32> = 1..2;
-    const R2: core::ops::Range<u32> = 2..3;
-    const R3: core::ops::Range<u32> = 3..4;
+    const R0: core::ops::Range<u16> = 0..1;
+    const R1: core::ops::Range<u16> = 1..2;
+    const R2: core::ops::Range<u16> = 2..3;
+    const R3: core::ops::Range<u16> = 3..4;
 
-    const R0_3: core::ops::Range<u32> = 0..3;
-    const R0_4: core::ops::Range<u32> = 0..4;
-    const R0_5: core::ops::Range<u32> = 0..5;
-    const R3_5: core::ops::Range<u32> = 3..5;
+    const R0_3: core::ops::Range<u16> = 0..3;
+    const R0_4: core::ops::Range<u16> = 0..4;
+    const R0_5: core::ops::Range<u16> = 0..5;
+    const R3_5: core::ops::Range<u16> = 3..5;
 
     fn bit_7_6_5_helper(
-        sr_range: core::ops::Range<u32>,
-        adc_range: core::ops::Range<u32>,
+        sr_range: core::ops::Range<u16>,
+        adc_range: core::ops::Range<u16>,
         ck: CalibrationKind,
         co: CalibrationObject,
         res: u16,
@@ -76,7 +82,7 @@ mod address_resolver_test {
         sr_range.for_each(|sr| {
             adc_range.clone().for_each(|adc_range| {
                 // slow
-                assert_eq!(get_bit_7_6_5(&ck, sr, adc_range, co), res);
+                assert_eq!(get_bit_7_6_5(ck, sr, adc_range, co), res);
             })
         });
     }

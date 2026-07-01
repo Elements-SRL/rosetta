@@ -1,9 +1,9 @@
 #[derive(Debug, PartialEq)]
-pub struct Lsb(pub u8);
+pub struct Lsb<T>(pub T);
 #[derive(Debug, PartialEq)]
-pub struct Msb(pub u8);
+pub struct Msb<T>(pub T);
 
-pub fn divide(v: u16) -> (Msb, Lsb) {
+pub fn divide(v: u16) -> (Msb<u8>, Lsb<u8>) {
     (Msb((v >> 8) as u8), Lsb(v as u8))
 }
 
