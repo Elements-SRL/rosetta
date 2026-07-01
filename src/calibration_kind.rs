@@ -6,7 +6,7 @@ pub enum CalibrationObject {
     Offset,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum CalibrationKind {
     CurrentAdc,
     VoltageAdc,

@@ -19,9 +19,9 @@ fn get_bit_10(ck: CalibrationKind) -> u16 {
     }
 }
 
-fn get_bit_9_8(ck: &CalibrationKind, rb: RangeBlock) -> u16 {
+fn get_bit_9_8(ck: &CalibrationKind, range_id: u16) -> u16 {
     let p = match ck {
-        CalibrationKind::CurrentAdc => (rb.range_id as u16) << 8,
+        CalibrationKind::CurrentAdc => range_id << 8,
         CalibrationKind::VoltageAdc => 0,
         CalibrationKind::VoltageDac | CalibrationKind::CurrentDac => 0x500,
         CalibrationKind::ShuntResistance | CalibrationKind::RsCorrection => 0xC00,
@@ -51,8 +51,17 @@ fn get_bit_7_6_5(ck: &CalibrationKind, sr_id: u32, range_id: u32, co: Calibratio
 mod address_resolver_test {
     use crate::{
         calibration_kind::{CalibrationKind, CalibrationObject},
-        syncro::address_resolver::{get_bit_7_6_5, get_bit_10},
+        syncro::address_resolver::{get_bit_7_6_5, get_bit_9_8, get_bit_10},
     };
+    const R0: core::ops::Range<u32> = 0..1;
+    const R1: core::ops::Range<u32> = 1..2;
+    const R2: core::ops::Range<u32> = 2..3;
+    const R3: core::ops::Range<u32> = 3..4;
+
+    const r0_3: core::ops::Range<u32> = 0..3;
+    const r0_4: core::ops::Range<u32> = 0..4;
+    const R0_5: core::ops::Range<u32> = 0..5;
+    const r3_5: core::ops::Range<u32> = 3..5;
 
     fn bit_7_6_5_helper(
         sr_range: core::ops::Range<u32>,
@@ -85,235 +94,65 @@ mod address_resolver_test {
 
     #[test]
     fn test_get_bit_7_6_5_current_adc() {
-        bit_7_6_5_helper(
-            0..3,
-            0..4,
-            CalibrationKind::CurrentAdc,
-            CalibrationObject::Gain,
-            0x80,
-        );
-        bit_7_6_5_helper(
-            0..3,
-            0..4,
-            CalibrationKind::CurrentAdc,
-            CalibrationObject::Offset,
-            0xA0,
-        );
-        bit_7_6_5_helper(
-            3..5,
-            0..4,
-            CalibrationKind::CurrentAdc,
-            CalibrationObject::Gain,
-            0x40,
-        );
-        bit_7_6_5_helper(
-            3..5,
-            0..4,
-            CalibrationKind::CurrentAdc,
-            CalibrationObject::Offset,
-            0x60,
-        );
+        let ca = CalibrationKind::CurrentAdc;
+        let g = CalibrationObject::Gain;
+        let o = CalibrationObject::Offset;
+        bit_7_6_5_helper(r0_3, r0_4, ca, g, 0x80);
+        bit_7_6_5_helper(r0_3, r0_4, ca, o, 0xA0);
+        bit_7_6_5_helper(r3_5, r0_4, ca, g, 0x40);
+        bit_7_6_5_helper(r3_5, r0_4, ca, o, 0x60);
     }
 
     #[test]
     fn test_get_bit_7_6_5_voltage_adc() {
-        bit_7_6_5_helper(
-            0..3,
-            0..4,
-            CalibrationKind::VoltageAdc,
-            CalibrationObject::Gain,
-            0x80,
-        );
-        bit_7_6_5_helper(
-            0..3,
-            0..4,
-            CalibrationKind::VoltageAdc,
-            CalibrationObject::Offset,
-            0xA0,
-        );
-        bit_7_6_5_helper(
-            3..5,
-            0..4,
-            CalibrationKind::VoltageAdc,
-            CalibrationObject::Gain,
-            0x40,
-        );
-        bit_7_6_5_helper(
-            3..5,
-            0..4,
-            CalibrationKind::VoltageAdc,
-            CalibrationObject::Offset,
-            0x60,
-        );
+        let va = CalibrationKind::VoltageAdc;
+        let g = CalibrationObject::Gain;
+        let o = CalibrationObject::Offset;
+        bit_7_6_5_helper(r0_3, r0_4, va, g, 0x80);
+        bit_7_6_5_helper(r0_3, r0_4, va, o, 0xA0);
+        bit_7_6_5_helper(r3_5, r0_4, va, g, 0x40);
+        bit_7_6_5_helper(r3_5, r0_4, va, o, 0x60);
     }
 
     #[test]
     fn test_get_bit_7_6_5_voltage_dac() {
-        bit_7_6_5_helper(
-            0..5,
-            0..1,
-            CalibrationKind::VoltageDac,
-            CalibrationObject::Gain,
-            0,
-        );
-        bit_7_6_5_helper(
-            0..5,
-            0..1,
-            CalibrationKind::VoltageDac,
-            CalibrationObject::Offset,
-            0x20,
-        );
+        let vd = CalibrationKind::VoltageDac;
+        bit_7_6_5_helper(R0_5, R0, vd, CalibrationObject::Gain, 0);
+        bit_7_6_5_helper(R0_5, R0, vd, CalibrationObject::Offset, 0x20);
     }
 
     #[test]
     fn test_get_bit_7_6_5_current_dac() {
-        bit_7_6_5_helper(
-            0..5,
-            0..1,
-            CalibrationKind::CurrentDac,
-            CalibrationObject::Gain,
-            0x80,
-        );
-        bit_7_6_5_helper(
-            0..5,
-            0..1,
-            CalibrationKind::CurrentDac,
-            CalibrationObject::Offset,
-            0xA0,
-        );
-        bit_7_6_5_helper(
-            0..5,
-            1..2,
-            CalibrationKind::CurrentDac,
-            CalibrationObject::Gain,
-            0xC0,
-        );
-        bit_7_6_5_helper(
-            0..5,
-            1..2,
-            CalibrationKind::CurrentDac,
-            CalibrationObject::Offset,
-            0xE0,
-        );
+        let cd: CalibrationKind = CalibrationKind::CurrentDac;
+        bit_7_6_5_helper(R0_5, R0, cd, CalibrationObject::Gain, 0x80);
+        bit_7_6_5_helper(R0_5, R0, cd, CalibrationObject::Offset, 0xA0);
+        bit_7_6_5_helper(R0_5, R1, cd, CalibrationObject::Gain, 0xC0);
+        bit_7_6_5_helper(R0_5, R1, cd, CalibrationObject::Offset, 0xE0);
     }
 
     #[test]
     fn test_get_bit_7_6_5_shunt_resistance() {
-        bit_7_6_5_helper(
-            0..5,
-            0..1,
-            CalibrationKind::ShuntResistance,
-            CalibrationObject::Gain,
-            0,
-        );
-        bit_7_6_5_helper(
-            0..5,
-            0..1,
-            CalibrationKind::ShuntResistance,
-            CalibrationObject::Offset,
-            0,
-        );
-        bit_7_6_5_helper(
-            0..5,
-            1..2,
-            CalibrationKind::ShuntResistance,
-            CalibrationObject::Gain,
-            0x20,
-        );
-        bit_7_6_5_helper(
-            0..5,
-            1..2,
-            CalibrationKind::ShuntResistance,
-            CalibrationObject::Offset,
-            0x20,
-        );
-        bit_7_6_5_helper(
-            0..5,
-            2..3,
-            CalibrationKind::ShuntResistance,
-            CalibrationObject::Gain,
-            0x40,
-        );
-        bit_7_6_5_helper(
-            0..5,
-            2..3,
-            CalibrationKind::ShuntResistance,
-            CalibrationObject::Offset,
-            0x40,
-        );
-        bit_7_6_5_helper(
-            0..5,
-            3..4,
-            CalibrationKind::ShuntResistance,
-            CalibrationObject::Gain,
-            0x60,
-        );
-        bit_7_6_5_helper(
-            0..5,
-            3..4,
-            CalibrationKind::ShuntResistance,
-            CalibrationObject::Offset,
-            0x60,
-        );
+        let sr = CalibrationKind::ShuntResistance;
+        bit_7_6_5_helper(R0_5, R0, sr, CalibrationObject::Gain, 0);
+        bit_7_6_5_helper(R0_5, R0, sr, CalibrationObject::Offset, 0);
+        bit_7_6_5_helper(R0_5, R1, sr, CalibrationObject::Gain, 0x20);
+        bit_7_6_5_helper(R0_5, R1, sr, CalibrationObject::Offset, 0x20);
+        bit_7_6_5_helper(R0_5, R2, sr, CalibrationObject::Gain, 0x40);
+        bit_7_6_5_helper(R0_5, R2, sr, CalibrationObject::Offset, 0x40);
+        bit_7_6_5_helper(R0_5, R3, sr, CalibrationObject::Gain, 0x60);
+        bit_7_6_5_helper(R0_5, R3, sr, CalibrationObject::Offset, 0x60);
     }
 
     #[test]
     fn test_get_bit_7_6_5_rs_correction() {
-        bit_7_6_5_helper(
-            0..5,
-            0..1,
-            CalibrationKind::RsCorrection,
-            CalibrationObject::Gain,
-            0x80,
-        );
-        bit_7_6_5_helper(
-            0..5,
-            0..1,
-            CalibrationKind::RsCorrection,
-            CalibrationObject::Offset,
-            0x80,
-        );
-        bit_7_6_5_helper(
-            0..5,
-            1..2,
-            CalibrationKind::RsCorrection,
-            CalibrationObject::Gain,
-            0xA0,
-        );
-        bit_7_6_5_helper(
-            0..5,
-            1..2,
-            CalibrationKind::RsCorrection,
-            CalibrationObject::Offset,
-            0xA0,
-        );
-        bit_7_6_5_helper(
-            0..5,
-            2..3,
-            CalibrationKind::RsCorrection,
-            CalibrationObject::Gain,
-            0xC0,
-        );
-        bit_7_6_5_helper(
-            0..5,
-            2..3,
-            CalibrationKind::RsCorrection,
-            CalibrationObject::Offset,
-            0xC0,
-        );
-        bit_7_6_5_helper(
-            0..5,
-            3..4,
-            CalibrationKind::RsCorrection,
-            CalibrationObject::Gain,
-            0xE0,
-        );
-        bit_7_6_5_helper(
-            0..5,
-            3..4,
-            CalibrationKind::RsCorrection,
-            CalibrationObject::Offset,
-            0xE0,
-        );
+        let rsc = CalibrationKind::RsCorrection;
+        bit_7_6_5_helper(R0_5, R0, rsc, CalibrationObject::Gain, 0x80);
+        bit_7_6_5_helper(R0_5, R0, rsc, CalibrationObject::Offset, 0x80);
+        bit_7_6_5_helper(R0_5, R1, rsc, CalibrationObject::Gain, 0xA0);
+        bit_7_6_5_helper(R0_5, R1, rsc, CalibrationObject::Offset, 0xA0);
+        bit_7_6_5_helper(R0_5, R2, rsc, CalibrationObject::Gain, 0xC0);
+        bit_7_6_5_helper(R0_5, R2, rsc, CalibrationObject::Offset, 0xC0);
+        bit_7_6_5_helper(R0_5, R3, rsc, CalibrationObject::Gain, 0xE0);
+        bit_7_6_5_helper(R0_5, R3, rsc, CalibrationObject::Offset, 0xE0);
     }
 }
