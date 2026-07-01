@@ -19,12 +19,12 @@ fn get_bit_10(ck: CalibrationKind) -> u16 {
     }
 }
 
-fn get_bit_9_8(ck: &CalibrationKind, range_id: u16) -> u16 {
+fn get_bit_9_8(ck: CalibrationKind, range_id: u16) -> u16 {
     let p = match ck {
         CalibrationKind::CurrentAdc => range_id << 8,
         CalibrationKind::VoltageAdc => 0,
-        CalibrationKind::VoltageDac | CalibrationKind::CurrentDac => 0x500,
-        CalibrationKind::ShuntResistance | CalibrationKind::RsCorrection => 0xC00,
+        CalibrationKind::VoltageDac | CalibrationKind::CurrentDac => 0x100,
+        CalibrationKind::ShuntResistance | CalibrationKind::RsCorrection => 0x200,
     };
     p & 0x300
 }
@@ -58,10 +58,10 @@ mod address_resolver_test {
     const R2: core::ops::Range<u32> = 2..3;
     const R3: core::ops::Range<u32> = 3..4;
 
-    const r0_3: core::ops::Range<u32> = 0..3;
-    const r0_4: core::ops::Range<u32> = 0..4;
+    const R0_3: core::ops::Range<u32> = 0..3;
+    const R0_4: core::ops::Range<u32> = 0..4;
     const R0_5: core::ops::Range<u32> = 0..5;
-    const r3_5: core::ops::Range<u32> = 3..5;
+    const R3_5: core::ops::Range<u32> = 3..5;
 
     fn bit_7_6_5_helper(
         sr_range: core::ops::Range<u32>,
@@ -93,14 +93,25 @@ mod address_resolver_test {
     }
 
     #[test]
+    fn test_get_bit_9_8() {
+        vec![(0, 0), (1, 0x100), (2, 0x200), (3, 0x300)].into_iter()
+        .for_each(|(range_id, res)| assert_eq!(get_bit_9_8(CalibrationKind::CurrentAdc, range_id), res));
+        assert_eq!(get_bit_9_8(CalibrationKind::VoltageAdc, 0), 0);
+        assert_eq!(get_bit_9_8(CalibrationKind::VoltageDac, 0), 0x100);
+        assert_eq!(get_bit_9_8(CalibrationKind::CurrentDac, 0), 0x100);
+        assert_eq!(get_bit_9_8(CalibrationKind::ShuntResistance, 0), 0x200);
+        assert_eq!(get_bit_9_8(CalibrationKind::RsCorrection, 0), 0x200);
+    }
+
+    #[test]
     fn test_get_bit_7_6_5_current_adc() {
         let ca = CalibrationKind::CurrentAdc;
         let g = CalibrationObject::Gain;
         let o = CalibrationObject::Offset;
-        bit_7_6_5_helper(r0_3, r0_4, ca, g, 0x80);
-        bit_7_6_5_helper(r0_3, r0_4, ca, o, 0xA0);
-        bit_7_6_5_helper(r3_5, r0_4, ca, g, 0x40);
-        bit_7_6_5_helper(r3_5, r0_4, ca, o, 0x60);
+        bit_7_6_5_helper(R0_3, R0_4, ca, g, 0x80);
+        bit_7_6_5_helper(R0_3, R0_4, ca, o, 0xA0);
+        bit_7_6_5_helper(R3_5, R0_4, ca, g, 0x40);
+        bit_7_6_5_helper(R3_5, R0_4, ca, o, 0x60);
     }
 
     #[test]
@@ -108,10 +119,10 @@ mod address_resolver_test {
         let va = CalibrationKind::VoltageAdc;
         let g = CalibrationObject::Gain;
         let o = CalibrationObject::Offset;
-        bit_7_6_5_helper(r0_3, r0_4, va, g, 0x80);
-        bit_7_6_5_helper(r0_3, r0_4, va, o, 0xA0);
-        bit_7_6_5_helper(r3_5, r0_4, va, g, 0x40);
-        bit_7_6_5_helper(r3_5, r0_4, va, o, 0x60);
+        bit_7_6_5_helper(R0_3, R0_4, va, g, 0x80);
+        bit_7_6_5_helper(R0_3, R0_4, va, o, 0xA0);
+        bit_7_6_5_helper(R3_5, R0_4, va, g, 0x40);
+        bit_7_6_5_helper(R3_5, R0_4, va, o, 0x60);
     }
 
     #[test]
