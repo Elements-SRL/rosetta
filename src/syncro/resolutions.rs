@@ -1,16 +1,10 @@
-pub struct Resoulutions {
-    gain: f64,
-    offset: f64,
-}
+pub struct Resoulution(f64);
 
-impl Resoulutions {
-    pub fn new(gain: f64, offset: f64) -> Self {
-        Self { gain, offset }
+impl Resoulution {
+    pub fn new(res: f64) -> Self {
+        Self(res)
     }
-    pub fn scale_gain(&self, gain: f64) -> u16 {
-        (gain / self.gain).round() as u16
-    }
-    pub fn scale_offset(&self, offset: f64) -> u16 {
-        (offset / self.offset).round() as u16
+    pub fn scale(&self, other: f64) -> u16 {
+        (other / self.0).round() as u16
     }
 }

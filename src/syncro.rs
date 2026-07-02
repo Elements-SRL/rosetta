@@ -30,14 +30,14 @@ impl SyncroV1 {
             rb.sampling_rates.iter().for_each(|sr| {
                 let sr_id = sr.sr_id;
                 tracing::info!("sr id: {}", sr_id);
-                match ck.resolutios(range_id) {
+                match ck.resolution(range_id, CalibrationObject::Gain) {
                     Some(res) => {
                         sr.calibrations
                             .gains
                             .iter()
                             .enumerate()
                             .for_each(|(ch_idx, g)| {
-                                let v = res.scale_gain(*g);
+                                let v = res.scale(*g);
                                 let (msb, lsb) = divide(v);
                                 let ch_idx = ch_idx as u16;
                                 let (add_lsb, add_msb) =
@@ -50,7 +50,7 @@ impl SyncroV1 {
                             .iter()
                             .enumerate()
                             .for_each(|(ch_idx, o)| {
-                                let v = res.scale_offset(*o);
+                                let v = res.scale(*o);
                                 let (msb, lsb) = divide(v);
                                 let ch_idx = ch_idx as u16;
                                 let (add_lsb, add_msb) =
