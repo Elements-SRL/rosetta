@@ -1,9 +1,5 @@
 use crate::{
-    calibration_kind::{CalibrationKind, CalibrationObject},
-    e384_commands::{get_ram, set_ram, write_all_eeproms, write_u8},
-    models::{Board, Calibration, RangeBlock, read_calibtations},
-    syncro::address_resolver::resolve,
-    util::divide,
+    calibration_kind::{CalibrationKind, CalibrationObject}, e384_commands::{get_ram, read_eeprom, set_ram, write_all_eeproms, write_u8}, models::{Board, Calibration, RangeBlock, read_calibtations}, syncro::address_resolver::resolve, util::divide,
 };
 use std::path::Path;
 use tracing::instrument;
@@ -71,6 +67,7 @@ impl SyncroV1 {
     fn apply_board(board: Board) {
         let bn = board.board_number;
         get_ram(bn);
+        set_ram(bn);
         SyncroV1::apply_calib_step(board.current_adc, CalibrationKind::CurrentAdc);
         SyncroV1::apply_calib_step(board.current_dac, CalibrationKind::CurrentDac);
         SyncroV1::apply_calib_step(board.voltage_adc, CalibrationKind::VoltageAdc);
@@ -80,10 +77,8 @@ impl SyncroV1 {
     }
 
     pub fn apply_complete_calibration(self) {
-        self.calibration.boards.into_iter().for_each(|b| {
-            set_ram(b.board_number);
-            SyncroV1::apply_board(b);
-        });
+        read_eeprom();
+        self.calibration.boards.into_iter().for_each(SyncroV1::apply_board);
         write_all_eeproms();
     }
 }
