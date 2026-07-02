@@ -43,7 +43,7 @@ pub fn write_all_eeproms() {
     // 	ESEMPIO: ram_cs = "000 .. 001" --> aggiornare la prima ram;
     // 		     ram_cs = "100 .. 000" --> aggiornare l ultima ram;
     //           ram_cs = "000 .. 011" --> vengono aggiornate sia la ram 1 che la ram 2, ma lo stesso dato nello stesso indirizzo.
-//     virtual ErrorCodes_t okMoveCalibrationRamsToEeprom();
+    //     virtual ErrorCodes_t okMoveCalibrationRamsToEeprom();
     tracing::trace!("writing all eeproms to apply calibrations");
 }
 
