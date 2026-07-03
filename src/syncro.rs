@@ -35,8 +35,8 @@ impl SyncroV1 {
                     let (msb, lsb) = divide(v);
                     let ch_idx = ch_idx as u16;
                     let (add_lsb, add_msb) = resolve(ck, range_id, sr_id, co, ch_idx);
-                    write_u8(add_lsb.0, lsb.0);
-                    write_u8(add_msb.0, msb.0);
+                    write_u8(None, add_lsb.0, lsb.0);
+                    write_u8(None, add_msb.0, msb.0);
                 });
                 Some(())
             }

@@ -1,4 +1,54 @@
+use std::ffi::{CStr, CString};
+
 use tracing::instrument;
+include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+
+const E384_SUCCESS: E384Err = 0;
+const E384_WARNING_VALUE_CLIPPED: E384Err = 0x8000_000B;
+
+fn check(err: E384Err) -> Result<(), E384Err> {
+    if err == E384_SUCCESS || err == E384_WARNING_VALUE_CLIPPED {
+        Ok(())
+    } else {
+        Err(err)
+    }
+}
+
+
+pub fn connect_to_first_device() -> Result<*mut E384Device, E384Err> {
+     // ---- 1. Scan for devices --------------------------------------
+    let mut list: *mut E384DeviceList = std::ptr::null_mut();
+    check(unsafe { e384_detectDevices(&mut list) })?;
+
+    let count = unsafe { e384_deviceList_count(list) };
+    println!("Found {count} device(s):");
+
+    let mut device_ids: Vec<String> = Vec::with_capacity(count);
+    for i in 0..count {
+        let ptr = unsafe { e384_deviceList_get(list, i) };
+        if ptr.is_null() {
+            continue;
+        }
+        // Copy the string out now — it's only valid until deviceList_free.
+        let id = unsafe { CStr::from_ptr(ptr) }.to_string_lossy().into_owned();
+        println!("  [{i}] {id}");
+        device_ids.push(id);
+    }
+
+    unsafe { e384_deviceList_free(list) };
+
+    let Some(first_id) = device_ids.first() else {
+        println!("No devices to connect to.");
+        return Err(E384_SUCCESS);
+    };
+
+    // ---- 2. Connect to the first one --------------------------------
+    let c_id = CString::new(first_id.as_str()).expect("device id had an embedded NUL");
+    let mut device: *mut E384Device = std::ptr::null_mut();
+    check(unsafe { e384_connect(c_id.as_ptr(), &mut device) })?;
+    println!("\nConnected to {first_id}");
+    Ok(device)
+}
 
 #[instrument]
 pub fn read_eeprom() {
@@ -24,16 +74,27 @@ pub fn set_ram(board_number: u32) {
 }
 
 #[instrument]
-pub fn write_u8(address: u16, value: u8) {
+pub fn write_u8(device: Option<&mut E384Device>, address: u16, value: u8) {
+    // unsafe {e384_okMoveCalibrationEepromToRams(device)};
     // okWriteCalibrationRam(uint16_t address, uint8_t value);
     tracing::trace!("writing...");
 }
 
-//     virtual ErrorCodes_t okMoveCalibrationEepromToRams();
-//     virtual ErrorCodes_t okMoveCalibrationRamsToEeprom();
-//     virtual ErrorCodes_t okSelectCalibrationRam(uint16_t ramIdx);
-//     virtual ErrorCodes_t okWriteCalibrationRam(uint16_t address, uint8_t value);
-//     virtual ErrorCodes_t okReadCalibrationRam();
+
+// /*! Copy the calibration EEPROM contents into the RAMs. */
+// E384C_API E384Err e384_okMoveCalibrationEepromToRams(E384Device* device);
+
+// /*! Copy the calibration RAMs back into the EEPROM. */
+// E384C_API E384Err e384_okMoveCalibrationRamsToEeprom(E384Device* device);
+
+// /*! Select the active calibration RAM by index. */
+// E384C_API E384Err e384_okSelectCalibrationRam(E384Device* device, uint16_t ramIdx);
+
+// /*! Write one byte to the selected calibration RAM at the given address. */
+// E384C_API E384Err e384_okWriteCalibrationRam(E384Device* device,
+//                                              uint16_t address,
+//                                              uint8_t value);
+
 #[instrument]
 pub fn write_all_eeproms() {
     //  trigger per aggiornare la ram (trigger 8, si può aggiornare solo una ram alla volta):
