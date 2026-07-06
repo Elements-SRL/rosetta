@@ -25,8 +25,7 @@ pub struct E384MiniWrapper(*mut E384Device);
 
 impl E384MiniWrapper {
     #[instrument]
-    pub fn connect_to_first_device() -> Result<Self, E384Err> {
-        // ---- 1. Scan for devices --------------------------------------
+    pub fn list_devices() -> Result<Vec<String>, E384Err> {
         let mut list: *mut E384DeviceList = std::ptr::null_mut();
         check(unsafe { e384_detectDevices(&mut list) })?;
 
@@ -43,22 +42,20 @@ impl E384MiniWrapper {
             let id = unsafe { CStr::from_ptr(ptr) }
                 .to_string_lossy()
                 .into_owned();
-            tracing::info!("  [{i}] {id}");
             device_ids.push(id);
         }
 
         unsafe { e384_deviceList_free(list) };
 
-        let Some(first_id) = device_ids.first() else {
-            tracing::warn!("No devices to connect to.");
-            return Err(E384_SUCCESS);
-        };
+        Ok(device_ids)
+    }
 
-        // ---- 2. Connect to the first one --------------------------------
-        let c_id = CString::new(first_id.as_str()).expect("device id had an embedded NUL");
+    #[instrument]
+    pub fn connect_to(id: &str) -> Result<Self, E384Err> {
+        let c_id = CString::new(id).expect("device id had an embedded NUL");
         let mut device: *mut E384Device = std::ptr::null_mut();
         check(unsafe { e384_connect(c_id.as_ptr(), &mut device) })?;
-        tracing::info!("\nConnected to {first_id}");
+        tracing::info!("Connected to {id}");
         Ok(Self(device))
     }
 

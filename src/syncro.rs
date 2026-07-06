@@ -14,13 +14,13 @@ pub struct SyncroV1 {
 }
 
 impl SyncroV1 {
-    pub fn from_file<I: AsRef<Path>>(
+    pub fn new<I: AsRef<Path>>(
         path: I,
+        device_id: &str,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let calibration = read_calibtations(path)?;
-        let dev = E384MiniWrapper::connect_to_first_device()
+        let dev = E384MiniWrapper::connect_to(device_id)
             .map_err(|e| format!("failed to connect to device (error code {e})"))?;
-
         Ok(Self { dev, calibration })
     }
 
