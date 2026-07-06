@@ -1,4 +1,4 @@
-use rosetta::{e384_commands::connect_to_first_device, syncro::SyncroV1};
+use rosetta::syncro::SyncroV1;
 use tracing_subscriber::EnvFilter;
 
 fn main() {
@@ -9,13 +9,9 @@ fn main() {
         .init();
     tracing::info!("app started");
 
-    let d = connect_to_first_device();
-    match d {
-        Ok(r) => println!("CONNECTED"),
-        _ => println!("NOOOOO"),
-    }
+    
     let s = SyncroV1::from_file("src\\assets\\syncropatch.toml");
-    if let Ok(syncro) = s {
+    if let Ok(mut syncro) = s {
         syncro.apply_complete_calibration();
     }
 }

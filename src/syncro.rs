@@ -1,9 +1,5 @@
 use crate::{
-    calibration_kind::{CalibrationKind, CalibrationObject},
-    e384_commands::{get_ram, read_eeprom, set_ram, write_all_eeproms, write_u8},
-    models::{Board, Calibration, RangeBlock, read_calibtations},
-    syncro::{address_resolver::resolve},
-    util::divide,
+    calibration_kind::{CalibrationKind, CalibrationObject}, e384_commands::E384MiniWrapper, models::{Board, Calibration, RangeBlock, read_calibtations}, syncro::address_resolver::resolve, util::divide,
 };
 use std::path::Path;
 use tracing::instrument;
@@ -11,17 +7,28 @@ use tracing::instrument;
 pub mod address_resolver;
 pub mod resolutions;
 
+#[derive(Debug)]
 pub struct SyncroV1 {
     calibration: Calibration,
+    dev: E384MiniWrapper,
 }
 
 impl SyncroV1 {
-    pub fn from_file<I: AsRef<Path>>(path: I) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn from_file<I: AsRef<Path>>(
+        path: I,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
+        let d = E384MiniWrapper::connect_to_first_device();
+        
         let calibration = read_calibtations(path)?;
-        Ok(Self { calibration })
+        match d {
+            Ok(r) => Ok(Self { dev: r, calibration }),
+            _ => panic!(),
+        }
     }
 
+    #[instrument(level = "trace")]
     fn set_calibrations(
+        &mut self,
         calibs: &[f64],
         ck: CalibrationKind,
         range_id: u32,
@@ -35,8 +42,8 @@ impl SyncroV1 {
                     let (msb, lsb) = divide(v);
                     let ch_idx = ch_idx as u16;
                     let (add_lsb, add_msb) = resolve(ck, range_id, sr_id, co, ch_idx);
-                    write_u8(None, add_lsb.0, lsb.0);
-                    write_u8(None, add_msb.0, msb.0);
+                    self.dev.write_u8(add_lsb.0, lsb.0);
+                    self.dev.write_u8(add_msb.0, msb.0);
                 });
                 Some(())
             }
@@ -47,8 +54,8 @@ impl SyncroV1 {
         }
     }
 
-    #[instrument]
-    fn apply_calib_step(rbs: Vec<RangeBlock>, ck: CalibrationKind) {
+    #[instrument(level = "trace")]
+    fn apply_calib_step(&mut self, rbs: Vec<RangeBlock>, ck: CalibrationKind) {
         tracing::info!("CalibrationKind: {:?}", ck);
         rbs.iter().for_each(|rb| {
             tracing::info!("range: {}, idx: {}", rb.range_name, rb.range_id);
@@ -56,14 +63,14 @@ impl SyncroV1 {
             rb.sampling_rates.iter().for_each(|sr| {
                 let sr_id = sr.sr_id;
                 tracing::info!("sr id: {}", sr_id);
-                SyncroV1::set_calibrations(
+                self.set_calibrations(
                     &sr.calibrations.gains,
                     ck,
                     range_id,
                     sr_id,
                     CalibrationObject::Gain,
                 );
-                SyncroV1::set_calibrations(
+                self.set_calibrations(
                     &sr.calibrations.offsets,
                     ck,
                     range_id,
@@ -74,25 +81,22 @@ impl SyncroV1 {
         });
     }
 
-    #[instrument]
-    fn apply_board(board: Board) {
-        let bn = board.board_number;
-        get_ram(bn);
-        set_ram(bn);
-        SyncroV1::apply_calib_step(board.current_adc, CalibrationKind::CurrentAdc);
-        SyncroV1::apply_calib_step(board.current_dac, CalibrationKind::CurrentDac);
-        SyncroV1::apply_calib_step(board.voltage_adc, CalibrationKind::VoltageAdc);
-        SyncroV1::apply_calib_step(board.voltage_dac, CalibrationKind::VoltageDac);
-        SyncroV1::apply_calib_step(board.shunt_resistance, CalibrationKind::ShuntResistance);
-        SyncroV1::apply_calib_step(board.rs_correction, CalibrationKind::RsCorrection);
+    #[instrument(level = "trace")]
+    fn apply_board(&mut self, board: Board) {
+        let bn = board.board_number as u16;
+        // self.dev.get_ram(bn);
+        self.dev.set_ram(bn);
+        self.apply_calib_step(board.current_adc, CalibrationKind::CurrentAdc);
+        self.apply_calib_step(board.current_dac, CalibrationKind::CurrentDac);
+        self.apply_calib_step(board.voltage_adc, CalibrationKind::VoltageAdc);
+        self.apply_calib_step(board.voltage_dac, CalibrationKind::VoltageDac);
+        self.apply_calib_step(board.shunt_resistance, CalibrationKind::ShuntResistance);
+        self.apply_calib_step(board.rs_correction, CalibrationKind::RsCorrection);
     }
 
-    pub fn apply_complete_calibration(self) {
-        read_eeprom();
-        self.calibration
-            .boards
-            .into_iter()
-            .for_each(SyncroV1::apply_board);
-        write_all_eeproms();
+    pub fn apply_complete_calibration(&mut self) {
+        self.dev.read_eeprom();
+        self.calibration.boards.clone().into_iter().for_each(|b| self.apply_board(b));
+        self.dev.write_all_eeproms();
     }
 }
