@@ -17,13 +17,11 @@ impl SyncroV1 {
     pub fn from_file<I: AsRef<Path>>(
         path: I,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        let d = E384MiniWrapper::connect_to_first_device();
-        
         let calibration = read_calibtations(path)?;
-        match d {
-            Ok(r) => Ok(Self { dev: r, calibration }),
-            _ => panic!(),
-        }
+        let dev = E384MiniWrapper::connect_to_first_device()
+            .map_err(|e| format!("failed to connect to device (error code {e})"))?;
+
+        Ok(Self { dev, calibration })
     }
 
     #[instrument(level = "trace")]
