@@ -94,7 +94,7 @@ impl SyncroV1 {
 
     pub fn apply_complete_calibration(&mut self) {
         self.dev.read_eeprom();
-        self.calibration.boards.clone().into_iter().for_each(|b| self.apply_board(b));
+        self.calibration.boards.clone().into_iter().for_each(|b| if b.board_number < 6 {self.apply_board(b)} );
         self.dev.write_all_eeproms();
     }
 }

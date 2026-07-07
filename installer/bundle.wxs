@@ -7,7 +7,7 @@
 
   Build with (from the repo root, after `cargo wix` has produced the MSI):
 
-    candle wix\bundle.wxs -ext WixBalExtension -ext WixUtilExtension -dVersion=0.1.0 -out target\wix\bundle\
+    candle installer\bundle.wxs -ext WixBalExtension -ext WixUtilExtension -dVersion=0.1.0 -out target\wix\bundle\
     light target\wix\bundle\bundle.wixobj -ext WixBalExtension -ext WixUtilExtension -out target\wix\RosettaSetup.exe
 -->
 <Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'

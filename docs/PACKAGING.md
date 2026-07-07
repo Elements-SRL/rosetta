@@ -29,15 +29,24 @@ The release process produces a single `RosettaSetup.exe` that:
 
 ## Release build steps
 
-Run from the repo root (adjust `<WIX_BIN>` to wherever `candle.exe`/`light.exe` live,
-and `<VERSION>` to match the version in `Cargo.toml`):
+Run from the repo root in PowerShell. First set `$WixBin` to wherever
+`candle.exe`/`light.exe` live, and `$Version` to match the version in
+`Cargo.toml` — these are PowerShell variables, not literal text to paste into
+the commands below (don't type angle brackets like `<WIX_BIN>` directly into
+PowerShell — it parses a bare `<...>` as a redirection operator and errors
+out):
 
+```powershell
+$WixBin = "C:\Users\lross\wix-toolset\bin"
+$Version = "0.1.0"
+
+cargo wix -b $WixBin
+& "$WixBin\candle.exe" installer\bundle.wxs -ext WixBalExtension -ext WixUtilExtension "-dVersion=$Version" -out target\wix\bundle\
+& "$WixBin\light.exe" target\wix\bundle\bundle.wixobj -ext WixBalExtension -ext WixUtilExtension -out target\wix\RosettaSetup.exe
 ```
-cargo build --release
-cargo wix -b <WIX_BIN>
-<WIX_BIN>\candle.exe installer\bundle.wxs -ext WixBalExtension -ext WixUtilExtension -dVersion=<VERSION> -out target\wix\bundle\
-<WIX_BIN>\light.exe target\wix\bundle\bundle.wixobj -ext WixBalExtension -ext WixUtilExtension -out target\wix\RosettaSetup.exe
-```
+
+`cargo wix` already runs `cargo build --release` for you, so there's no need
+to invoke it separately beforehand.
 
 The final distributable is `target\wix\RosettaSetup.exe` — hand this single file to
 end users.
