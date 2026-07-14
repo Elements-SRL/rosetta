@@ -1,5 +1,4 @@
 use crate::{
-    COMMLIB_DELAY,
     calibration_kind::{CalibrationKind, CalibrationObject},
     models::{Board, Calibration, RangeBlock, read_calibtations},
     syncro::address_resolver::resolve,
@@ -48,11 +47,9 @@ impl SyncroV1 {
                     if let Err(e) = self.dev.ok_write_calibration_ram(add_lsb.0, lsb.0) {
                         tracing::error!("failed to write calibration ram: {e:?}");
                     }
-                    thread::sleep(Duration::from_millis(COMMLIB_DELAY));
                     if let Err(e) = self.dev.ok_write_calibration_ram(add_msb.0, msb.0) {
                         tracing::error!("failed to write calibration ram: {e:?}");
                     }
-                    thread::sleep(Duration::from_millis(COMMLIB_DELAY));
                 });
                 Some(())
             }
@@ -97,28 +94,35 @@ impl SyncroV1 {
         if let Err(e) = self.dev.ok_select_calibration_ram(bn) {
             tracing::error!("failed to select calibration ram: {e:?}");
         }
-        thread::sleep(Duration::from_millis(COMMLIB_DELAY));
         self.apply_calib_step(board.current_adc, CalibrationKind::CurrentAdc);
         self.apply_calib_step(board.current_dac, CalibrationKind::CurrentDac);
         self.apply_calib_step(board.voltage_adc, CalibrationKind::VoltageAdc);
         self.apply_calib_step(board.voltage_dac, CalibrationKind::VoltageDac);
         self.apply_calib_step(board.shunt_resistance, CalibrationKind::ShuntResistance);
         self.apply_calib_step(board.rs_correction, CalibrationKind::RsCorrection);
-        if let Err(e) = self.dev.ok_move_calibration_rams_to_eeprom() {
-            tracing::error!("failed to move calibration rams to eeprom: {e:?}");
-        }
-        thread::sleep(Duration::from_millis(COMMLIB_DELAY));
     }
 
     pub fn apply_complete_calibration(&mut self) {
+        if let Err(e) = self.dev.set_debug_bit(0, 14, false, true) {
+            tracing::error!("failed to set debug bit: {e:?}");
+        }
+        tracing::info!("Waiting 10s!");
+        thread::sleep(Duration::from_secs(10));
+        tracing::info!("Donne!");
         if let Err(e) = self.dev.ok_move_calibration_eeprom_to_rams() {
             tracing::error!("failed to move calibration eeprom to rams: {e:?}");
         }
-        thread::sleep(Duration::from_millis(COMMLIB_DELAY));
         self.calibration.boards.clone().into_iter().for_each(|b| {
+            // todo rmeove this if statemente for real deal
             if b.board_number < 6 {
                 self.apply_board(b)
             }
         });
+        tracing::info!("Calibration completed!");
+        if let Err(e) = self.dev.ok_move_calibration_rams_to_eeprom() {
+            tracing::error!("failed to move calibration rams to eeprom: {e:?}");
+        }
+        thread::sleep(Duration::from_secs(5));
+        tracing::info!("See you next time!");
     }
 }

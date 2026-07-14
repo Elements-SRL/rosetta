@@ -3,4 +3,4 @@ pub mod models;
 pub mod syncro;
 pub mod util;
 
-pub const COMMLIB_DELAY: u64 = 50;
+pub const WRITE_TIME: u64 = 1;
