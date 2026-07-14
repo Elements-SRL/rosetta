@@ -1,8 +1,12 @@
 use crate::{
-    calibration_kind::{CalibrationKind, CalibrationObject}, models::{Board, Calibration, RangeBlock, read_calibtations}, syncro::address_resolver::resolve, util::divide,
+    COMMLIB_DELAY,
+    calibration_kind::{CalibrationKind, CalibrationObject},
+    models::{Board, Calibration, RangeBlock, read_calibtations},
+    syncro::address_resolver::resolve,
+    util::divide,
 };
 use e384_rust::device::Device;
-use std::path::Path;
+use std::{path::Path, thread, time::Duration};
 use tracing::instrument;
 
 pub mod address_resolver;
@@ -44,9 +48,11 @@ impl SyncroV1 {
                     if let Err(e) = self.dev.ok_write_calibration_ram(add_lsb.0, lsb.0) {
                         tracing::error!("failed to write calibration ram: {e:?}");
                     }
+                    thread::sleep(Duration::from_millis(COMMLIB_DELAY));
                     if let Err(e) = self.dev.ok_write_calibration_ram(add_msb.0, msb.0) {
                         tracing::error!("failed to write calibration ram: {e:?}");
                     }
+                    thread::sleep(Duration::from_millis(COMMLIB_DELAY));
                 });
                 Some(())
             }
@@ -86,25 +92,33 @@ impl SyncroV1 {
 
     #[instrument(level = "trace")]
     fn apply_board(&mut self, board: Board) {
+        tracing::info!("Board: {}", board.board_number);
         let bn = board.board_number as u16;
         if let Err(e) = self.dev.ok_select_calibration_ram(bn) {
             tracing::error!("failed to select calibration ram: {e:?}");
         }
+        thread::sleep(Duration::from_millis(COMMLIB_DELAY));
         self.apply_calib_step(board.current_adc, CalibrationKind::CurrentAdc);
         self.apply_calib_step(board.current_dac, CalibrationKind::CurrentDac);
         self.apply_calib_step(board.voltage_adc, CalibrationKind::VoltageAdc);
         self.apply_calib_step(board.voltage_dac, CalibrationKind::VoltageDac);
         self.apply_calib_step(board.shunt_resistance, CalibrationKind::ShuntResistance);
         self.apply_calib_step(board.rs_correction, CalibrationKind::RsCorrection);
+        if let Err(e) = self.dev.ok_move_calibration_rams_to_eeprom() {
+            tracing::error!("failed to move calibration rams to eeprom: {e:?}");
+        }
+        thread::sleep(Duration::from_millis(COMMLIB_DELAY));
     }
 
     pub fn apply_complete_calibration(&mut self) {
         if let Err(e) = self.dev.ok_move_calibration_eeprom_to_rams() {
             tracing::error!("failed to move calibration eeprom to rams: {e:?}");
         }
-        self.calibration.boards.clone().into_iter().for_each(|b| if b.board_number < 6 {self.apply_board(b)} );
-        if let Err(e) = self.dev.ok_move_calibration_rams_to_eeprom() {
-            tracing::error!("failed to move calibration rams to eeprom: {e:?}");
-        }
+        thread::sleep(Duration::from_millis(COMMLIB_DELAY));
+        self.calibration.boards.clone().into_iter().for_each(|b| {
+            if b.board_number < 6 {
+                self.apply_board(b)
+            }
+        });
     }
 }
