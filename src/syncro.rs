@@ -1,6 +1,7 @@
 use crate::{
-    calibration_kind::{CalibrationKind, CalibrationObject}, e384_commands::E384MiniWrapper, models::{Board, Calibration, RangeBlock, read_calibtations}, syncro::address_resolver::resolve, util::divide,
+    calibration_kind::{CalibrationKind, CalibrationObject}, models::{Board, Calibration, RangeBlock, read_calibtations}, syncro::address_resolver::resolve, util::divide,
 };
+use e384_rust::device::Device;
 use std::path::Path;
 use tracing::instrument;
 
@@ -10,7 +11,7 @@ pub mod resolutions;
 #[derive(Debug)]
 pub struct SyncroV1 {
     calibration: Calibration,
-    dev: E384MiniWrapper,
+    dev: Device,
 }
 
 impl SyncroV1 {
@@ -19,8 +20,8 @@ impl SyncroV1 {
         device_id: &str,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let calibration = read_calibtations(path)?;
-        let dev = E384MiniWrapper::connect_to(device_id)
-            .map_err(|e| format!("failed to connect to device (error code {e})"))?;
+        let dev = Device::connect(device_id)
+            .map_err(|e| format!("failed to connect to device (error code {e:?})"))?;
         Ok(Self { dev, calibration })
     }
 
@@ -40,8 +41,12 @@ impl SyncroV1 {
                     let (msb, lsb) = divide(v);
                     let ch_idx = ch_idx as u16;
                     let (add_lsb, add_msb) = resolve(ck, range_id, sr_id, co, ch_idx);
-                    self.dev.write_u8(add_lsb.0, lsb.0);
-                    self.dev.write_u8(add_msb.0, msb.0);
+                    if let Err(e) = self.dev.ok_write_calibration_ram(add_lsb.0, lsb.0) {
+                        tracing::error!("failed to write calibration ram: {e:?}");
+                    }
+                    if let Err(e) = self.dev.ok_write_calibration_ram(add_msb.0, msb.0) {
+                        tracing::error!("failed to write calibration ram: {e:?}");
+                    }
                 });
                 Some(())
             }
@@ -82,8 +87,9 @@ impl SyncroV1 {
     #[instrument(level = "trace")]
     fn apply_board(&mut self, board: Board) {
         let bn = board.board_number as u16;
-        // self.dev.get_ram(bn);
-        self.dev.set_ram(bn);
+        if let Err(e) = self.dev.ok_select_calibration_ram(bn) {
+            tracing::error!("failed to select calibration ram: {e:?}");
+        }
         self.apply_calib_step(board.current_adc, CalibrationKind::CurrentAdc);
         self.apply_calib_step(board.current_dac, CalibrationKind::CurrentDac);
         self.apply_calib_step(board.voltage_adc, CalibrationKind::VoltageAdc);
@@ -93,8 +99,12 @@ impl SyncroV1 {
     }
 
     pub fn apply_complete_calibration(&mut self) {
-        self.dev.read_eeprom();
+        if let Err(e) = self.dev.ok_move_calibration_eeprom_to_rams() {
+            tracing::error!("failed to move calibration eeprom to rams: {e:?}");
+        }
         self.calibration.boards.clone().into_iter().for_each(|b| if b.board_number < 6 {self.apply_board(b)} );
-        self.dev.write_all_eeproms();
+        if let Err(e) = self.dev.ok_move_calibration_rams_to_eeprom() {
+            tracing::error!("failed to move calibration rams to eeprom: {e:?}");
+        }
     }
 }

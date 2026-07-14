@@ -1,19 +1,20 @@
 use std::path::PathBuf;
 
 use clap::Parser;
-use rosetta::{e384_commands::E384MiniWrapper, syncro::SyncroV1};
+use e384_rust::device::Device;
+use rosetta::syncro::SyncroV1;
 use tracing_subscriber::EnvFilter;
 
 #[derive(Parser)]
 struct Cli {
     /// Name of the device to connect to. If omitted, you'll be prompted to pick from
     /// the list of detected devices.
-    #[arg(long)]
+    #[arg(short = 'd', long)]
     device: Option<String>,
 
     /// Path to the calibration TOML file. If omitted, the current directory is
     /// searched for a .toml file.
-    #[arg(long)]
+    #[arg(short = 'c', long)]
     calib_path: Option<PathBuf>,
 }
 
@@ -37,8 +38,8 @@ fn prompt_choice(items: &[String], label: &str) -> usize {
 }
 
 fn resolve_device(requested: Option<String>) -> String {
-    let devices = E384MiniWrapper::list_devices().unwrap_or_else(|e| {
-        eprintln!("failed to list devices (error code {e})");
+    let devices = Device::list_devices().unwrap_or_else(|e| {
+        eprintln!("failed to list devices (error code {e:?})");
         std::process::exit(1);
     });
 
