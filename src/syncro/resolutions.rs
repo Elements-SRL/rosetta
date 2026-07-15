@@ -1,6 +1,6 @@
-pub struct Resoulution(f64);
+pub struct Resolution(f64);
 
-impl Resoulution {
+impl Resolution {
     pub fn new(res: f64) -> Self {
         Self(res)
     }
