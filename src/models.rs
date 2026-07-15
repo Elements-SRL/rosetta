@@ -15,7 +15,7 @@ pub struct SamplingRate {
     pub commlib_indexes: Vec<u32>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Board {
     pub board_number: u32,
     pub current_dac: Vec<RangeBlock>,
@@ -26,20 +26,20 @@ pub struct Board {
     pub voltage_dac: Vec<RangeBlock>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct RangeBlock {
     pub range_name: String,
     pub range_id: u32,
     pub sampling_rates: Vec<RangeSamplingRate>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct RangeSamplingRate {
     pub sr_id: u32,
     pub calibrations: Values,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Values {
     #[serde(default)]
     pub gains: Vec<f64>,

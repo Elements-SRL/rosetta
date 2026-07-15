@@ -61,7 +61,7 @@ pub fn resolve(
     let b_7_6_5 = get_bit_7_6_5(ck, sr_id, range_id, co);
     let b4_3_2_1 = get_bit_4_3_2_1(ch_idx);
     let address = b10 | b9_8 | b_7_6_5 | b4_3_2_1;
-    (Lsb(address), Msb(address | 1))
+    (Lsb(address | 1), Msb(address))
 }
 
 #[cfg(test)]
