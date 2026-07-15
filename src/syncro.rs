@@ -1,5 +1,11 @@
 use crate::{
-    calibration_kind::{CORRECT_MILLIS, CORRECT_NANO, CORRECT_PICO, CalibrationKind, CalibrationObject}, models::{Board, Calibration, RangeBlock, read_calibtations}, resolutions::{Resolution, ResolutionSearch}, syncro::address_resolver::resolve, util::divide,
+    calibration_kind::{
+        CORRECT_MILLIS, CORRECT_NANO, CORRECT_PICO, CalibrationKind, CalibrationObject,
+    },
+    models::{Board, Calibration, RangeBlock, read_calibtations},
+    resolutions::{Resolution, ResolutionSearch},
+    syncro::address_resolver::resolve,
+    util::divide,
 };
 use e384_rust::device::Device;
 use std::{path::Path, thread, time::Duration};
@@ -122,7 +128,6 @@ impl SyncroV1 {
         tracing::info!("See you next time!");
     }
 }
-
 
 impl ResolutionSearch for SyncroV1 {
     fn find(ck: CalibrationKind, co: CalibrationObject, range_id: u32) -> Option<Resolution> {

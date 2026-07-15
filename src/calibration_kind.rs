@@ -1,5 +1,3 @@
-use crate::resolutions::Resolution;
-
 pub const CORRECT_NANO: f64 = 1e-9;
 pub const CORRECT_PICO: f64 = 1e-12;
 pub const CORRECT_MILLIS: f64 = 1e-3;
