@@ -4,7 +4,6 @@ pub const CORRECT_NANO: f64 = 1e-9;
 pub const CORRECT_PICO: f64 = 1e-12;
 pub const CORRECT_MILLIS: f64 = 1e-3;
 
-
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum CalibrationObject {
     Gain,
@@ -26,7 +25,7 @@ impl CalibrationKind {
         if co == CalibrationObject::Gain {
             return Some(Resolution::new(1.0 / 1024.0));
         }
-        // offsets are stored in the foundamental unit of measurement, so the resoulution 
+        // offsets are stored in the foundamental unit of measurement, so the resoulution
         // have to be in the same unit (e.g. CurrentAdc is in nA, the offsets are in A, so we multipy by CORRECT_NANO)
         match self {
             CalibrationKind::CurrentAdc => match range_id {
@@ -43,7 +42,7 @@ impl CalibrationKind {
             CalibrationKind::ShuntResistance => match range_id {
                 // 10e-6 would be CORRECT_NANO / CORRECT_MILLIS
                 0 => Some(Resolution::new((0.00030517578125 / 0.125 / 16384.0) * 1e-6)),
-                1 => Some(Resolution::new((0.001220703125 / 0.125/ 16384.0) * 1e-6)),
+                1 => Some(Resolution::new((0.001220703125 / 0.125 / 16384.0) * 1e-6)),
                 2 => Some(Resolution::new((0.001220703125 / 0.125 / 16384.0) * 1e-6)),
                 3 => Some(Resolution::new((0.01220703125 / 0.125 / 16384.0) * 1e-6)),
                 _ => None,
