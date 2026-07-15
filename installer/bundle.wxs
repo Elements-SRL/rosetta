@@ -1,0 +1,50 @@
+<?xml version='1.0' encoding='windows-1252'?>
+<!--
+  Chains the Microsoft VC++ Redistributable (x64) together with the rosetta
+  MSI (built via `cargo wix`) into a single self-contained setup.exe, so the
+  end user only ever runs one installer and never has to think about DLLs or
+  runtime prerequisites.
+
+  Build with (from the repo root, after `cargo wix` has produced the MSI):
+
+    candle installer\bundle.wxs -ext WixBalExtension -ext WixUtilExtension -dVersion=0.1.0 -out target\wix\bundle\
+    light target\wix\bundle\bundle.wixobj -ext WixBalExtension -ext WixUtilExtension -out target\wix\RosettaSetup.exe
+-->
+<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'
+     xmlns:bal='http://schemas.microsoft.com/wix/BalExtension'
+     xmlns:util='http://schemas.microsoft.com/wix/UtilExtension'>
+
+    <Bundle Name='rosetta'
+            Version='$(var.Version)'
+            Manufacturer='Luca Rossi'
+            UpgradeCode='C7F0B6C1-6E9E-4B1E-9C8B-2E6F2E6C7A11'>
+
+        <BootstrapperApplicationRef Id='WixStandardBootstrapperApplication.RtfLicense'/>
+
+        <!-- Skip re-installing the VC++ runtime if it's already present on the machine. -->
+        <util:RegistrySearch Id='VCRedistInstalledSearch'
+                              Root='HKLM'
+                              Key='SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\X64'
+                              Value='Installed'
+                              Variable='VCRedistInstalled'
+                              Result='exists'/>
+
+        <Chain>
+            <ExePackage Id='VCRedist'
+                        SourceFile='vendor\redist\vc_redist.x64.exe'
+                        DisplayName='Microsoft Visual C++ Redistributable (x64)'
+                        DetectCondition='VCRedistInstalled'
+                        InstallCommand='/install /quiet /norestart'
+                        RepairCommand='/repair /quiet /norestart'
+                        UninstallCommand='/uninstall /quiet /norestart'
+                        Permanent='yes'
+                        Vital='yes'/>
+
+            <MsiPackage SourceFile='target\wix\rosetta-$(var.Version)-x86_64.msi'
+                        DisplayName='rosetta'
+                        Vital='yes'/>
+        </Chain>
+
+    </Bundle>
+
+</Wix>
