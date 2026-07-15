@@ -1,8 +1,5 @@
 use crate::{
-    calibration_kind::{CalibrationKind, CalibrationObject},
-    models::{Board, Calibration, RangeBlock, read_calibtations},
-    syncro::address_resolver::resolve,
-    util::divide,
+    calibration_kind::{CORRECT_MILLIS, CORRECT_NANO, CORRECT_PICO, CalibrationKind, CalibrationObject}, models::{Board, Calibration, RangeBlock, read_calibtations}, resolutions::{Resolution, ResolutionSearch}, syncro::address_resolver::resolve, util::divide,
 };
 use e384_rust::device::Device;
 use std::{path::Path, thread, time::Duration};
@@ -36,7 +33,7 @@ impl SyncroV1 {
         sr_id: u32,
         co: CalibrationObject,
     ) -> Option<()> {
-        match ck.resolution(range_id, co) {
+        match Self::find(ck, co, range_id) {
             Some(res) => {
                 calibs.iter().enumerate().for_each(|(ch_idx, g)| {
                     let v = res.scale(*g);
@@ -123,5 +120,45 @@ impl SyncroV1 {
         }
         thread::sleep(Duration::from_secs(5));
         tracing::info!("See you next time!");
+    }
+}
+
+
+impl ResolutionSearch for SyncroV1 {
+    fn find(ck: CalibrationKind, co: CalibrationObject, range_id: u32) -> Option<Resolution> {
+        if co == CalibrationObject::Gain {
+            return Some(Resolution::new(1.0 / 1024.0));
+        }
+        // offsets are stored in the foundamental unit of measurement, so the resoulution
+        // have to be in the same unit (e.g. CurrentAdc is in nA, the offsets are in A, so we multipy by CORRECT_NANO)
+        match ck {
+            CalibrationKind::CurrentAdc => match range_id {
+                0 => Some(Resolution::new(0.00030517578125 * CORRECT_NANO)),
+                1 => Some(Resolution::new(0.001220703125 * CORRECT_NANO)),
+                2 => Some(Resolution::new(0.001220703125 * CORRECT_NANO)),
+                3 => Some(Resolution::new(0.01220703125 * CORRECT_NANO)),
+                _ => None,
+            },
+            CalibrationKind::VoltageAdc => match range_id {
+                0 => Some(Resolution::new(0.00762939453125 * CORRECT_MILLIS)),
+                _ => None,
+            },
+            CalibrationKind::ShuntResistance => match range_id {
+                // 10e-6 would be CORRECT_NANO / CORRECT_MILLIS
+                0 => Some(Resolution::new((0.00030517578125 / 0.125 / 16384.0) * 1e-6)),
+                1 => Some(Resolution::new((0.001220703125 / 0.125 / 16384.0) * 1e-6)),
+                2 => Some(Resolution::new((0.001220703125 / 0.125 / 16384.0) * 1e-6)),
+                3 => Some(Resolution::new((0.01220703125 / 0.125 / 16384.0) * 1e-6)),
+                _ => None,
+            },
+            CalibrationKind::CurrentDac => match range_id {
+                0 => Some(Resolution::new(1.953125 * CORRECT_PICO)),
+                1 => Some(Resolution::new(0.48828125 * CORRECT_PICO)),
+                _ => None,
+            },
+            CalibrationKind::VoltageDac | CalibrationKind::RsCorrection => {
+                Some(Resolution::new(0.125 * CORRECT_MILLIS))
+            }
+        }
     }
 }

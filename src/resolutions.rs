@@ -1,3 +1,5 @@
+use crate::calibration_kind::{CalibrationKind, CalibrationObject};
+
 pub struct Resolution(f64);
 
 impl Resolution {
@@ -8,6 +10,10 @@ impl Resolution {
     pub fn scale(&self, other: f64) -> i16 {
         (other / self.0).round() as i16
     }
+}
+
+pub trait ResolutionSearch {
+    fn find(ck: CalibrationKind, co: CalibrationObject, range_id: u32) -> Option<Resolution>;
 }
 
 #[cfg(test)]
