@@ -1,8 +1,11 @@
 pub mod address_resolver;
 pub mod calibration_kind;
+pub mod devices;
 pub mod models;
 pub mod resolutions;
-pub mod syncro;
+pub mod stele;
 pub mod util;
+
+pub mod constants;
 
 pub const WRITE_TIME: u64 = 1;

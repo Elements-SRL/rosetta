@@ -1,8 +1,10 @@
-use std::path::PathBuf;
-
 use clap::Parser;
 use e384_rust::device::Device;
-use rosetta::syncro::SyncroV1;
+use rosetta::{
+    devices::{SupportedDevices, syncro::SyncroV1},
+    stele::Stele,
+};
+use std::path::PathBuf;
 use tracing_subscriber::EnvFilter;
 
 #[derive(Parser)]
@@ -107,8 +109,26 @@ fn main() {
     let device_id = resolve_device(cli.device);
     let calib_path = resolve_calib_path(cli.calib_path);
 
-    let s = SyncroV1::new(calib_path, &device_id);
-    if let Ok(mut syncro) = s {
-        syncro.apply_complete_calibration();
+    let d_res = Device::connect(&device_id)
+        .map_err(|e| format!("failed to connect to device (error code {e:?})"));
+    if let Ok(dev) = d_res {
+        match dev.device_info() {
+            Ok(di) => match SupportedDevices::from_device_version_info(&di) {
+                Some(sd) => match sd {
+                    SupportedDevices::SyncroV1 => {
+                        if let Ok(mut syncro) = Stele::<SyncroV1>::new(calib_path, dev) {
+                            syncro.apply_complete_calibration();
+                        }
+                    }
+                    SupportedDevices::E192 => {
+                        if let Ok(mut syncro) = Stele::<SyncroV1>::new(calib_path, dev) {
+                            syncro.apply_complete_calibration();
+                        }
+                    }
+                },
+                None => tracing::error!("Device version: {:?} is incompatible with Rosetta ", di),
+            },
+            Err(e) => tracing::error!("{:?}", e),
+        }
     }
 }

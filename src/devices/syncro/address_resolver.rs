@@ -1,7 +1,7 @@
 use crate::{
     address_resolver::AddressResolver,
     calibration_kind::{CalibrationKind, CalibrationObject},
-    syncro::SyncroV1,
+    devices::syncro::SyncroV1,
     util::{Lsb, Msb},
 };
 
@@ -50,15 +50,13 @@ fn get_bit_4_3_2_1(ch_idx: u16) -> u16 {
 }
 
 impl AddressResolver for SyncroV1 {
-    type Address = (Lsb<u16>, Msb<u16>);
-
     fn resolve(
         ck: CalibrationKind,
         range_id: u32,
         sr_id: u32,
         co: CalibrationObject,
         ch_idx: u16,
-    ) -> Self::Address {
+    ) -> (Lsb<u16>, Msb<u16>) {
         let range_id = range_id as u16;
         let sr_id = sr_id as u16;
         let b10 = get_bit_10(ck);
@@ -74,7 +72,9 @@ impl AddressResolver for SyncroV1 {
 mod address_resolver_test {
     use crate::{
         calibration_kind::{CalibrationKind, CalibrationObject},
-        syncro::address_resolver::{get_bit_4_3_2_1, get_bit_7_6_5, get_bit_9_8, get_bit_10},
+        devices::syncro::address_resolver::{
+            get_bit_4_3_2_1, get_bit_7_6_5, get_bit_9_8, get_bit_10,
+        },
     };
     const R0: core::ops::Range<u16> = 0..1;
     const R1: core::ops::Range<u16> = 1..2;
