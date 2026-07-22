@@ -127,14 +127,6 @@
                                 Source='$(var.CargoTargetBinDir)\rosetta.exe'
                                 KeyPath='yes'/>
                         </Component>
-                        <Component Id='dll_e384c' Guid='*'>
-                            <File
-                                Id='dll_e384c'
-                                Name='e384c.dll'
-                                DiskId='1'
-                                Source='vendor\dlls\e384c.dll'
-                                KeyPath='yes'/>
-                        </Component>
                         <Component Id='dll_ftd2xx' Guid='*'>
                             <File
                                 Id='dll_ftd2xx'
@@ -181,7 +173,6 @@
             <!--<ComponentRef Id='License'/>-->
 
             <ComponentRef Id='binary0'/>
-            <ComponentRef Id='dll_e384c'/>
             <ComponentRef Id='dll_ftd2xx'/>
             <ComponentRef Id='dll_mpsse'/>
             <ComponentRef Id='dll_okfrontpanel'/>

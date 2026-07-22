@@ -10,4 +10,4 @@ serde = { version = "1.0", features = ["derive"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 clap = { version = "4", features = ["derive"] }
-e384_rust = {path = "../rust/e384_rust", features = ["bundled"]}
+e384_rust = {path = "../rust/e384_rust"}
