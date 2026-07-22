@@ -1,5 +1,7 @@
 use crate::{
+    address_resolver::AddressResolver,
     calibration_kind::{CalibrationKind, CalibrationObject},
+    syncro::SyncroV1,
     util::{Lsb, Msb},
 };
 
@@ -47,21 +49,25 @@ fn get_bit_4_3_2_1(ch_idx: u16) -> u16 {
     ch_idx << 1 & 0x1E
 }
 
-pub fn resolve(
-    ck: CalibrationKind,
-    range_id: u32,
-    sr_id: u32,
-    co: CalibrationObject,
-    ch_idx: u16,
-) -> (Lsb<u16>, Msb<u16>) {
-    let range_id = range_id as u16;
-    let sr_id = sr_id as u16;
-    let b10 = get_bit_10(ck);
-    let b9_8 = get_bit_9_8(ck, range_id);
-    let b_7_6_5 = get_bit_7_6_5(ck, sr_id, range_id, co);
-    let b4_3_2_1 = get_bit_4_3_2_1(ch_idx);
-    let address = b10 | b9_8 | b_7_6_5 | b4_3_2_1;
-    (Lsb(address | 1), Msb(address))
+impl AddressResolver for SyncroV1 {
+    type Address = (Lsb<u16>, Msb<u16>);
+
+    fn resolve(
+        ck: CalibrationKind,
+        range_id: u32,
+        sr_id: u32,
+        co: CalibrationObject,
+        ch_idx: u16,
+    ) -> Self::Address {
+        let range_id = range_id as u16;
+        let sr_id = sr_id as u16;
+        let b10 = get_bit_10(ck);
+        let b9_8 = get_bit_9_8(ck, range_id);
+        let b_7_6_5 = get_bit_7_6_5(ck, sr_id, range_id, co);
+        let b4_3_2_1 = get_bit_4_3_2_1(ch_idx);
+        let address = b10 | b9_8 | b_7_6_5 | b4_3_2_1;
+        (Lsb(address | 1), Msb(address))
+    }
 }
 
 #[cfg(test)]

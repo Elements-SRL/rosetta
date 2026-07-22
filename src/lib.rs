@@ -1,3 +1,4 @@
+pub mod address_resolver;
 pub mod calibration_kind;
 pub mod models;
 pub mod resolutions;

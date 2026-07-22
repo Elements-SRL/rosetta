@@ -4,14 +4,13 @@ use crate::{
     },
     models::{Board, Calibration, RangeBlock, read_calibtations},
     resolutions::{Resolution, ResolutionSearch},
-    syncro::address_resolver::resolve,
     util::divide,
+    address_resolver::AddressResolver
 };
 use e384_rust::device::Device;
 use std::{path::Path, thread, time::Duration};
 use tracing::instrument;
-
-pub mod address_resolver;
+mod address_resolver;
 
 #[derive(Debug)]
 pub struct SyncroV1 {
@@ -45,7 +44,7 @@ impl SyncroV1 {
                     let v = res.scale(*g);
                     let (msb, lsb) = divide(v);
                     let ch_idx = ch_idx as u16;
-                    let (add_lsb, add_msb) = resolve(ck, range_id, sr_id, co, ch_idx);
+                    let (add_lsb, add_msb) = Self::resolve(ck, range_id, sr_id, co, ch_idx);
                     if let Err(e) = self.dev.ok_write_calibration_ram(add_lsb.0, lsb.0) {
                         tracing::error!("failed to write calibration ram: {e:?}");
                     }
