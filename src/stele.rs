@@ -30,7 +30,7 @@ impl<D: AddressResolver + ResolutionSearch + Debug> Stele<D> {
 
     #[instrument(level = "trace")]
     fn set_calibrations(
-        &mut self,
+        &self,
         calibs: &[f64],
         ck: CalibrationKind,
         range_id: u32,
@@ -61,7 +61,7 @@ impl<D: AddressResolver + ResolutionSearch + Debug> Stele<D> {
     }
 
     #[instrument(level = "trace")]
-    fn apply_calib_step(&mut self, rbs: Vec<RangeBlock>, ck: CalibrationKind) {
+    fn apply_calib_step(&self, rbs: Vec<RangeBlock>, ck: CalibrationKind) {
         tracing::info!("CalibrationKind: {:?}", ck);
         rbs.iter().for_each(|rb| {
             tracing::info!("range: {}, idx: {}", rb.range_name, rb.range_id);
@@ -88,7 +88,7 @@ impl<D: AddressResolver + ResolutionSearch + Debug> Stele<D> {
     }
 
     #[instrument(level = "trace")]
-    fn apply_board(&mut self, board: Board) {
+    fn apply_board(&self, board: Board) {
         tracing::info!("Board: {}", board.board_number);
         let bn = board.board_number as u16;
         if let Err(e) = self.dev.ok_select_calibration_ram(bn) {
@@ -106,7 +106,7 @@ impl<D: AddressResolver + ResolutionSearch + Debug> Stele<D> {
         if let Err(e) = self.dev.set_debug_bit(0, 14, false, true) {
             tracing::error!("failed to set debug bit: {e:?}");
         }
-        tracing::info!("Waiting 10s!");
+        tracing::info!("Waiting 10s...");
         thread::sleep(Duration::from_secs(10));
         tracing::info!("Done!");
         if let Err(e) = self.dev.ok_move_calibration_eeprom_to_rams() {
