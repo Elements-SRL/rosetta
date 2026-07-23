@@ -107,21 +107,91 @@ rosetta [OPTIONS] <WORKSPACE>
 
 ### Examples
 
+Every command below is copy-pastable. They assume you are in the repo root and that your workspace
+folder is `./my_workspace`. Adjust the path and `device_sn` to your setup.
+
+#### Getting started
+
+```sh
+# Print help (full reference, examples, logging)
+rosetta --help
+
+# Short help summary
+rosetta -h
+
+# Print the version
+rosetta --version
+```
+
+#### Running the built binary
+
+```sh
+# Build first, then run the release binary directly
+cargo build --release
+
+# Calibrate the connected device and export per-board files
+./target/release/rosetta ./my_workspace -d device_sn
+
+# Windows (PowerShell / cmd)
+.\target\release\rosetta.exe .\my_workspace -d device_sn
+```
+
+#### Running via cargo (no separate build step)
+
+```sh
+# Everything after `--` is passed to Rosetta
+cargo run --release -- ./my_workspace -d device_sn
+
+# Debug build (faster to compile, slower to run)
+cargo run -- ./my_workspace -d device_sn
+```
+
+#### Calibrate + export (default mode)
+
 ```sh
 # Calibrate the connected device and export per-board files
 rosetta ./my_workspace -d device_sn
 
-# Pick the device interactively (omit -d)
+# Pick the device interactively from the detected list (omit -d)
 rosetta ./my_workspace
 
 # Use a differently named calibration file inside the workspace
 rosetta ./my_workspace -d device_sn -c my_calibration.toml
 
-# Offline: only split the calibration file into per-board files
+# Long-flag spelling
+rosetta ./my_workspace --device device_sn --calib my_calibration.toml
+```
+
+#### Export only (offline, no device)
+
+```sh
+# Only split the calibration file into per-board files (no device connection)
 rosetta ./my_workspace -d device_sn --only-files
 
-# Verbose logging
+# Short flag for --only-files
+rosetta ./my_workspace -d device_sn -o
+
+# Offline export with a custom calibration file name
+rosetta ./my_workspace -d device_sn -c my_calibration.toml --only-files
+```
+
+#### Logging verbosity
+
+```sh
+# Default is info; no env var needed
+rosetta ./my_workspace -d device_sn
+
+# More detail
+RUST_LOG=debug rosetta ./my_workspace -d device_sn
+
+# Full per-call spans
 RUST_LOG=trace rosetta ./my_workspace -d device_sn
+```
+
+On Windows PowerShell, set the env var separately:
+
+```powershell
+$env:RUST_LOG = "trace"; rosetta .\my_workspace -d device_sn
 ```
 
 ## Input files
