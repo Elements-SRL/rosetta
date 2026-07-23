@@ -1,10 +1,12 @@
 use crate::{
     calibration_kind::{
         CORRECT_MILLIS, CORRECT_NANO, CORRECT_PICO, CalibrationKind, CalibrationObject,
-    }, resolutions::{Resolution, ResolutionSearch}, util::calc_res,
+    },
+    resolutions::{Resolution, ResolutionSearch},
+    util::calc_res,
 };
 
-// mod address_resolver;
+mod address_resolver;
 
 #[derive(Debug)]
 pub struct E192;
@@ -28,7 +30,7 @@ impl ResolutionSearch for E192 {
                 0 => Some(Resolution::new(calc_res(512.0, 10) * CORRECT_MILLIS)),
                 _ => None,
             },
-            _ => None
+            _ => None,
         }
     }
 }

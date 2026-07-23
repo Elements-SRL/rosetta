@@ -1,7 +1,9 @@
 use crate::{
     calibration_kind::{
         CORRECT_MILLIS, CORRECT_NANO, CORRECT_PICO, CalibrationKind, CalibrationObject,
-    }, resolutions::{Resolution, ResolutionSearch}, util::calc_res,
+    },
+    resolutions::{Resolution, ResolutionSearch},
+    util::calc_res,
 };
 
 mod address_resolver;
@@ -30,10 +32,18 @@ impl ResolutionSearch for SyncroV1 {
             },
             CalibrationKind::ShuntResistance => match range_id {
                 // 10e-6 would be CORRECT_NANO / CORRECT_MILLIS
-                0 => Some(Resolution::new((calc_res(10.0, 16) / 0.125 / 16384.0) * 1e-6)),
-                1 => Some(Resolution::new((calc_res(40.0, 16) / 0.125 / 16384.0) * 1e-6)),
-                2 => Some(Resolution::new((calc_res(40.0, 16) / 0.125 / 16384.0) * 1e-6)),
-                3 => Some(Resolution::new((calc_res(400.0, 16) / 0.125 / 16384.0) * 1e-6)),
+                0 => Some(Resolution::new(
+                    (calc_res(10.0, 16) / 0.125 / 16384.0) * 1e-6,
+                )),
+                1 => Some(Resolution::new(
+                    (calc_res(40.0, 16) / 0.125 / 16384.0) * 1e-6,
+                )),
+                2 => Some(Resolution::new(
+                    (calc_res(40.0, 16) / 0.125 / 16384.0) * 1e-6,
+                )),
+                3 => Some(Resolution::new(
+                    (calc_res(400.0, 16) / 0.125 / 16384.0) * 1e-6,
+                )),
                 _ => None,
             },
             CalibrationKind::CurrentDac => match range_id {
@@ -47,7 +57,6 @@ impl ResolutionSearch for SyncroV1 {
         }
     }
 }
-
 
 #[cfg(test)]
 mod syncro_resolution_tests {

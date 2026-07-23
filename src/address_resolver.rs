@@ -10,5 +10,6 @@ pub trait AddressResolver {
         sr_id: u32,
         co: CalibrationObject,
         ch_idx: u16,
+        clk_div: Option<u16>,
     ) -> (Lsb<u16>, Msb<u16>);
 }

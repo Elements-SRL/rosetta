@@ -1,7 +1,7 @@
 use clap::Parser;
 use e384_rust::device::Device;
 use rosetta::{
-    devices::{SupportedDevices, syncro::SyncroV1},
+    devices::{SupportedDevices, e192::E192, syncro::SyncroV1},
     stele::Stele,
 };
 use std::path::PathBuf;
@@ -109,9 +109,11 @@ fn run(device_id: &str, calib_path: PathBuf) -> Result<(), Box<dyn std::error::E
         .ok_or_else(|| format!("device version {di:?} is incompatible with Rosetta"))?;
 
     match device {
-        SupportedDevices::SyncroV1 | SupportedDevices::E192 => {
-            let mut syncro = Stele::<SyncroV1>::new(calib_path, dev)?;
-            syncro.apply_complete_calibration();
+        SupportedDevices::SyncroV1 => {
+            Stele::<SyncroV1>::new(calib_path, dev)?.apply_complete_calibration();
+        }
+        SupportedDevices::E192 => {
+            Stele::<E192>::new(calib_path, dev)?.apply_complete_calibration();
         }
     }
 

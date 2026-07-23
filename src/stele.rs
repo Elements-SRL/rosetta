@@ -36,6 +36,7 @@ impl<D: AddressResolver + ResolutionSearch + Debug> Stele<D> {
         range_id: u32,
         sr_id: u32,
         co: CalibrationObject,
+        clk_div: Option<u16>,
     ) -> Option<()> {
         match D::find(ck, co, range_id) {
             Some(res) => {
@@ -43,7 +44,7 @@ impl<D: AddressResolver + ResolutionSearch + Debug> Stele<D> {
                     let v = res.scale(*g);
                     let (msb, lsb) = divide(v);
                     let ch_idx = ch_idx as u16;
-                    let (add_lsb, add_msb) = D::resolve(ck, range_id, sr_id, co, ch_idx);
+                    let (add_lsb, add_msb) = D::resolve(ck, range_id, sr_id, co, ch_idx, clk_div);
                     if let Err(e) = self.dev.ok_write_calibration_ram(add_lsb.0, lsb.0) {
                         tracing::error!("failed to write calibration ram: {e:?}");
                     }
@@ -75,6 +76,7 @@ impl<D: AddressResolver + ResolutionSearch + Debug> Stele<D> {
                     range_id,
                     sr_id,
                     CalibrationObject::Gain,
+                    sr.clk_div,
                 );
                 self.set_calibrations(
                     &sr.calibrations.offsets,
@@ -82,6 +84,7 @@ impl<D: AddressResolver + ResolutionSearch + Debug> Stele<D> {
                     range_id,
                     sr_id,
                     CalibrationObject::Offset,
+                    sr.clk_div,
                 );
             });
         });

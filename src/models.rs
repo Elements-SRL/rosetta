@@ -36,6 +36,7 @@ pub struct RangeBlock {
 #[derive(Debug, Deserialize, Clone)]
 pub struct RangeSamplingRate {
     pub sr_id: u32,
+    pub clk_div: Option<u16>,
     pub calibrations: Values,
 }
 

@@ -56,6 +56,7 @@ impl AddressResolver for SyncroV1 {
         sr_id: u32,
         co: CalibrationObject,
         ch_idx: u16,
+        _: Option<u16>,
     ) -> (Lsb<u16>, Msb<u16>) {
         let range_id = range_id as u16;
         let sr_id = sr_id as u16;

@@ -1,0 +1,194 @@
+use crate::{
+    address_resolver::AddressResolver,
+    calibration_kind::{CalibrationKind, CalibrationObject},
+    devices::e192::E192,
+    util::{Lsb, Msb},
+};
+
+fn sr_id_to_clock_div(sr_id: u16) -> u16 {
+    if sr_id < 4 { 0 } else { 1 }
+}
+
+fn get_bit_9(ck: CalibrationKind) -> u16 {
+    if ck == CalibrationKind::CurrentAdc {
+        0
+    } else {
+        0x100
+    }
+}
+
+fn get_bit_8_7(ck: CalibrationKind, range_id: u16) -> u16 {
+    let p = match ck {
+        CalibrationKind::CurrentAdc => range_id << 6,
+        _ => 0,
+    };
+    p & 0xC0
+}
+
+fn get_bit_6_5(ck: CalibrationKind, sr_id: u16, clk_div: Option<u16>) -> u16 {
+    let p = match clk_div {
+        Some(ck) => ck,
+        _ => match ck {
+            CalibrationKind::CurrentAdc => sr_id_to_clock_div(sr_id) << 4,
+            _ => 0,
+        },
+    };
+    p & 0x30
+}
+
+fn get_bit_4(co: CalibrationObject) -> u16 {
+    if co == CalibrationObject::Gain { 0 } else { 1 }
+}
+
+fn get_bit_3_2_1(ch_idx: u16) -> u16 {
+    ch_idx << 1 & 0x1E
+}
+
+impl AddressResolver for E192 {
+    fn resolve(
+        ck: CalibrationKind,
+        range_id: u32,
+        sr_id: u32,
+        co: CalibrationObject,
+        ch_idx: u16,
+        clk_div: Option<u16>,
+    ) -> (Lsb<u16>, Msb<u16>) {
+        let range_id = range_id as u16;
+        let sr_id = sr_id as u16;
+        let b9 = get_bit_9(ck);
+        let b8_7 = get_bit_8_7(ck, range_id);
+        let b6_5 = get_bit_6_5(ck, sr_id, clk_div);
+        let b4 = get_bit_4(co);
+        let b3_2_1 = get_bit_3_2_1(ch_idx);
+        let address = b9 | b8_7 | b6_5 | b4 | b3_2_1;
+        (Lsb(address | 1), Msb(address))
+    }
+}
+
+#[cfg(test)]
+mod e192_address_resolver_test {
+    // use crate::{
+    //     calibration_kind::{CalibrationKind, CalibrationObject},
+    // };
+    // const R0: core::ops::Range<u16> = 0..1;
+    // const R1: core::ops::Range<u16> = 1..2;
+    // const R2: core::ops::Range<u16> = 2..3;
+    // const R3: core::ops::Range<u16> = 3..4;
+
+    // const R0_3: core::ops::Range<u16> = 0..3;
+    // const R0_4: core::ops::Range<u16> = 0..4;
+    // const R0_5: core::ops::Range<u16> = 0..5;
+    // const R3_5: core::ops::Range<u16> = 3..5;
+
+    // fn bit_7_6_5_helper(
+    //     sr_range: core::ops::Range<u16>,
+    //     adc_range: core::ops::Range<u16>,
+    //     ck: CalibrationKind,
+    //     co: CalibrationObject,
+    //     res: u16,
+    // ) {
+    //     sr_range.for_each(|sr| {
+    //         adc_range.clone().for_each(|adc_range| {
+    //             // slow
+    //             assert_eq!(get_bit_7_6_5(ck, sr, adc_range, co), res);
+    //         })
+    //     });
+    // }
+
+    // #[test]
+    // fn test_get_bit_10() {
+    //     assert_eq!(get_bit_10(CalibrationKind::CurrentAdc), 0);
+    //     vec![
+    //         CalibrationKind::VoltageAdc,
+    //         CalibrationKind::ShuntResistance,
+    //         CalibrationKind::RsCorrection,
+    //         CalibrationKind::CurrentDac,
+    //         CalibrationKind::VoltageDac,
+    //     ]
+    //     .into_iter()
+    //     .for_each(|ck| assert_eq!(get_bit_10(ck), 0x400));
+    // }
+
+    // #[test]
+    // fn test_get_bit_9_8() {
+    //     vec![(0, 0), (1, 0x100), (2, 0x200), (3, 0x300)]
+    //         .into_iter()
+    //         .for_each(|(range_id, res)| {
+    //             assert_eq!(get_bit_9_8(CalibrationKind::CurrentAdc, range_id), res)
+    //         });
+    //     assert_eq!(get_bit_9_8(CalibrationKind::VoltageAdc, 0), 0);
+    //     assert_eq!(get_bit_9_8(CalibrationKind::VoltageDac, 0), 0x100);
+    //     assert_eq!(get_bit_9_8(CalibrationKind::CurrentDac, 0), 0x100);
+    //     assert_eq!(get_bit_9_8(CalibrationKind::ShuntResistance, 0), 0x200);
+    //     assert_eq!(get_bit_9_8(CalibrationKind::RsCorrection, 0), 0x200);
+    // }
+
+    // #[test]
+    // fn test_get_bit_7_6_5_current_adc() {
+    //     let ca = CalibrationKind::CurrentAdc;
+    //     let g = CalibrationObject::Gain;
+    //     let o = CalibrationObject::Offset;
+    //     bit_7_6_5_helper(R0_3, R0_4, ca, g, 0x80);
+    //     bit_7_6_5_helper(R0_3, R0_4, ca, o, 0xA0);
+    //     bit_7_6_5_helper(R3_5, R0_4, ca, g, 0x40);
+    //     bit_7_6_5_helper(R3_5, R0_4, ca, o, 0x60);
+    // }
+
+    // #[test]
+    // fn test_get_bit_7_6_5_voltage_adc() {
+    //     let va = CalibrationKind::VoltageAdc;
+    //     let g = CalibrationObject::Gain;
+    //     let o = CalibrationObject::Offset;
+    //     bit_7_6_5_helper(R0_3, R0_4, va, g, 0x80);
+    //     bit_7_6_5_helper(R0_3, R0_4, va, o, 0xA0);
+    //     bit_7_6_5_helper(R3_5, R0_4, va, g, 0x40);
+    //     bit_7_6_5_helper(R3_5, R0_4, va, o, 0x60);
+    // }
+
+    // #[test]
+    // fn test_get_bit_7_6_5_voltage_dac() {
+    //     let vd = CalibrationKind::VoltageDac;
+    //     bit_7_6_5_helper(R0_5, R0, vd, CalibrationObject::Gain, 0);
+    //     bit_7_6_5_helper(R0_5, R0, vd, CalibrationObject::Offset, 0x20);
+    // }
+
+    // #[test]
+    // fn test_get_bit_7_6_5_current_dac() {
+    //     let cd: CalibrationKind = CalibrationKind::CurrentDac;
+    //     bit_7_6_5_helper(R0_5, R0, cd, CalibrationObject::Gain, 0x80);
+    //     bit_7_6_5_helper(R0_5, R0, cd, CalibrationObject::Offset, 0xA0);
+    //     bit_7_6_5_helper(R0_5, R1, cd, CalibrationObject::Gain, 0xC0);
+    //     bit_7_6_5_helper(R0_5, R1, cd, CalibrationObject::Offset, 0xE0);
+    // }
+
+    // #[test]
+    // fn test_get_bit_7_6_5_shunt_resistance() {
+    //     let sr = CalibrationKind::ShuntResistance;
+    //     bit_7_6_5_helper(R0_5, R0, sr, CalibrationObject::Gain, 0);
+    //     bit_7_6_5_helper(R0_5, R0, sr, CalibrationObject::Offset, 0);
+    //     bit_7_6_5_helper(R0_5, R1, sr, CalibrationObject::Gain, 0x20);
+    //     bit_7_6_5_helper(R0_5, R1, sr, CalibrationObject::Offset, 0x20);
+    //     bit_7_6_5_helper(R0_5, R2, sr, CalibrationObject::Gain, 0x40);
+    //     bit_7_6_5_helper(R0_5, R2, sr, CalibrationObject::Offset, 0x40);
+    //     bit_7_6_5_helper(R0_5, R3, sr, CalibrationObject::Gain, 0x60);
+    //     bit_7_6_5_helper(R0_5, R3, sr, CalibrationObject::Offset, 0x60);
+    // }
+
+    // #[test]
+    // fn test_get_bit_7_6_5_rs_correction() {
+    //     let rsc = CalibrationKind::RsCorrection;
+    //     bit_7_6_5_helper(R0_5, R0, rsc, CalibrationObject::Gain, 0x80);
+    //     bit_7_6_5_helper(R0_5, R0, rsc, CalibrationObject::Offset, 0x80);
+    //     bit_7_6_5_helper(R0_5, R1, rsc, CalibrationObject::Gain, 0xA0);
+    //     bit_7_6_5_helper(R0_5, R1, rsc, CalibrationObject::Offset, 0xA0);
+    //     bit_7_6_5_helper(R0_5, R2, rsc, CalibrationObject::Gain, 0xC0);
+    //     bit_7_6_5_helper(R0_5, R2, rsc, CalibrationObject::Offset, 0xC0);
+    //     bit_7_6_5_helper(R0_5, R3, rsc, CalibrationObject::Gain, 0xE0);
+    //     bit_7_6_5_helper(R0_5, R3, rsc, CalibrationObject::Offset, 0xE0);
+    // }
+
+    // #[test]
+    // fn test_get_bit_4_3_2_1() {
+    //     (0..16).for_each(|ch| assert_eq!(get_bit_4_3_2_1(ch), ch * 2))
+    // }
+}
