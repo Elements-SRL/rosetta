@@ -13,32 +13,32 @@ fn get_bit_9(ck: CalibrationKind) -> u16 {
     if ck == CalibrationKind::CurrentAdc {
         0
     } else {
-        0x100
+        0x200
     }
 }
 
 fn get_bit_8_7(ck: CalibrationKind, range_id: u16) -> u16 {
     let p = match ck {
-        CalibrationKind::CurrentAdc => range_id << 6,
+        CalibrationKind::CurrentAdc => range_id << 7,
         _ => 0,
     };
-    p & 0xC0
+    p & 0x180
 }
 
 fn get_bit_6_5(ck: CalibrationKind, sr_id: u16, clk_div: Option<u16>) -> u16 {
     let p = match ck {
         CalibrationKind::CurrentAdc => match clk_div {
-        Some(ck) => ck << 4,
-        _ => sr_id_to_clock_div(sr_id) << 4,
+        Some(ck) => ck << 5,
+        _ => sr_id_to_clock_div(sr_id) << 5,
         },
         _ => 0,
     };
-    p & 0x30
+    p & 0x60
 }
 
 fn get_bit_4(co: CalibrationObject) -> u16 {
     let p = if co == CalibrationObject::Gain { 0 } else { 1 }; 
-    p << 3 & 0x8
+    p << 4 & 0x10
 }
 
 fn get_bit_3_2_1(ch_idx: u16) -> u16 {
@@ -83,12 +83,12 @@ mod e192_address_resolver_test {
             CalibrationKind::VoltageDac,
         ]
         .into_iter()
-        .for_each(|ck| assert_eq!(get_bit_9(ck), 0x100));
+        .for_each(|ck| assert_eq!(get_bit_9(ck), 0x200));
     }
 
     #[test]
     fn test_get_bit_8_7() {
-        vec![(0, 0), (1, 0x40), (2, 0x80), (3, 0xC0)]
+        vec![(0, 0), (1, 0x80), (2, 0x100), (3, 0x180)]
             .into_iter()
             .for_each(|(range_id, res)| {
                 assert_eq!(get_bit_8_7(CalibrationKind::CurrentAdc, range_id), res)
@@ -107,13 +107,13 @@ mod e192_address_resolver_test {
     #[test]
     fn test_get_bit_6_5_current_adc() {
         (0..7)
-        .map(|i| (i, if i < 4 {0} else {0x10}))
+        .map(|i| (i, if i < 4 {0} else {0x20}))
         .for_each(|(i,r)| assert_eq!(get_bit_6_5(CalibrationKind::CurrentAdc, i, None), r));
     }
 
     #[test]
     fn test_get_bit_6_5_current_adc_ck_div() {
-        vec![0, 0x10, 0x20, 0x30]
+        vec![0, 0x20, 0x40, 0x60]
         .into_iter()
         .enumerate()
         .map(|(clk_div, res)| (clk_div as u16, res))
@@ -148,7 +148,7 @@ mod e192_address_resolver_test {
     #[test]
     fn test_get_bit_4() {
         assert_eq!(get_bit_4(CalibrationObject::Gain), 0);
-        assert_eq!(get_bit_4(CalibrationObject::Offset), 0x8);
+        assert_eq!(get_bit_4(CalibrationObject::Offset), 0x10);
     }
 
     #[test]
