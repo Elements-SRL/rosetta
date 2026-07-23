@@ -32,16 +32,38 @@ The release process produces a single `RosettaSetup.exe` that:
 
 ## Release build steps
 
+### Quick way: run the script
+
+From the repo root, `build-installer.ps1` runs all three steps below for you. It
+reads the version from `Cargo.toml`, finds the WiX toolset, checks each step
+succeeded, and prints the final installer path:
+
+```powershell
+# WiX on PATH, or set $env:WIX_BIN first
+.\build-installer.ps1
+
+# or point it at the toolset explicitly
+.\build-installer.ps1 -WixBin "C:\Users\lross\wix-toolset\bin"
+```
+
+Pass `-Version <x.y.z>` only if you need to override the value from `Cargo.toml`.
+
+### Manual steps
+
 Run from the repo root in PowerShell. First set `$WixBin` to wherever
-`candle.exe`/`light.exe` live, and `$Version` to match the version in
-`Cargo.toml` — these are PowerShell variables, not literal text to paste into
+`candle.exe`/`light.exe` live. `$Version` is read automatically from
+`Cargo.toml` so it always matches the MSI that `cargo wix` produces — you never
+edit it by hand. These are PowerShell variables, not literal text to paste into
 the commands below (don't type angle brackets like `<WIX_BIN>` directly into
 PowerShell — it parses a bare `<...>` as a redirection operator and errors
 out):
 
 ```powershell
 $WixBin = "C:\Users\lross\wix-toolset\bin"
-$Version = "0.1.0"
+
+# Read the package version straight from Cargo.toml (authoritative, via cargo).
+$Version = (cargo metadata --no-deps --format-version 1 | ConvertFrom-Json).packages `
+    | Where-Object { $_.name -eq 'rosetta' } | Select-Object -ExpandProperty version
 
 cargo wix -b $WixBin
 & "$WixBin\candle.exe" installer\bundle.wxs -ext WixBalExtension -ext WixUtilExtension "-dVersion=$Version" -out target\wix\bundle\
@@ -50,6 +72,19 @@ cargo wix -b $WixBin
 
 `cargo wix` already runs `cargo build --release` for you, so there's no need
 to invoke it separately beforehand.
+
+> Why derive it? `cargo wix` always names its MSI `rosetta-<Cargo.toml
+> version>-x86_64.msi`, and `bundle.wxs` looks for exactly that filename via
+> `$(var.Version)`. Reading `$Version` from `Cargo.toml` keeps the two in sync
+> automatically — bump the version in `Cargo.toml` and the installer follows.
+>
+> If you'd rather not shell out to `cargo`, this regex reads the same value
+> straight from the file (the package `version` is the first `version = "..."`
+> line):
+>
+> ```powershell
+> $Version = (Select-String -Path Cargo.toml -Pattern '^version\s*=\s*"(.*)"').Matches[0].Groups[1].Value
+> ```
 
 The final distributable is `target\wix\RosettaSetup.exe` — hand this single file to
 end users.

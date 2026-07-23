@@ -5,9 +5,13 @@
   end user only ever runs one installer and never has to think about DLLs or
   runtime prerequisites.
 
-  Build with (from the repo root, after `cargo wix` has produced the MSI):
+  Build with (from the repo root, after `cargo wix` has produced the MSI).
+  $Version is read from Cargo.toml so it matches the MSI cargo-wix produced --
+  see docs\PACKAGING.md for the full steps:
 
-    candle installer\bundle.wxs -ext WixBalExtension -ext WixUtilExtension -dVersion=0.1.0 -out target\wix\bundle\
+    $Version = (cargo metadata --no-deps --format-version 1 | ConvertFrom-Json).packages `
+        | Where-Object { $_.name -eq 'rosetta' } | Select-Object -ExpandProperty version
+    candle installer\bundle.wxs -ext WixBalExtension -ext WixUtilExtension "-dVersion=$Version" -out target\wix\bundle\
     light target\wix\bundle\bundle.wixobj -ext WixBalExtension -ext WixUtilExtension -out target\wix\RosettaSetup.exe
 -->
 <Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'
