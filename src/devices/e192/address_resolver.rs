@@ -28,8 +28,8 @@ fn get_bit_8_7(ck: CalibrationKind, range_id: u16) -> u16 {
 fn get_bit_6_5(ck: CalibrationKind, sr_id: u16, clk_div: Option<u16>) -> u16 {
     let p = match ck {
         CalibrationKind::CurrentAdc => match clk_div {
-        Some(clk) => clk << 5,
-        _ => sr_id_to_clock_div(sr_id) << 5,
+            Some(clk) => clk << 5,
+            _ => sr_id_to_clock_div(sr_id) << 5,
         },
         _ => 0,
     };
@@ -37,7 +37,7 @@ fn get_bit_6_5(ck: CalibrationKind, sr_id: u16, clk_div: Option<u16>) -> u16 {
 }
 
 fn get_bit_4(co: CalibrationObject) -> u16 {
-    let p = if co == CalibrationObject::Gain { 0 } else { 1 }; 
+    let p = if co == CalibrationObject::Gain { 0 } else { 1 };
     p << 4 & 0x10
 }
 
@@ -69,7 +69,10 @@ impl AddressResolver for E192 {
 #[cfg(test)]
 mod e192_address_resolver_test {
     use crate::{
-        calibration_kind::{CalibrationKind, CalibrationObject}, devices::e192::address_resolver::{get_bit_3_2_1, get_bit_4, get_bit_6_5, get_bit_8_7, get_bit_9},
+        calibration_kind::{CalibrationKind, CalibrationObject},
+        devices::e192::address_resolver::{
+            get_bit_3_2_1, get_bit_4, get_bit_6_5, get_bit_8_7, get_bit_9,
+        },
     };
 
     #[test]
@@ -101,25 +104,33 @@ mod e192_address_resolver_test {
             CalibrationKind::VoltageDac,
         ]
         .into_iter()
-        .for_each(|ck| (0..16).into_iter().for_each(|r_id|assert_eq!(get_bit_8_7(ck, r_id), 0x00)));
+        .for_each(|ck| {
+            (0..16)
+                .into_iter()
+                .for_each(|r_id| assert_eq!(get_bit_8_7(ck, r_id), 0x00))
+        });
     }
 
     #[test]
     fn test_get_bit_6_5_current_adc() {
         (0..7)
-        .map(|i| (i, if i < 4 {0} else {0x20}))
-        .for_each(|(i,r)| assert_eq!(get_bit_6_5(CalibrationKind::CurrentAdc, i, None), r));
+            .map(|i| (i, if i < 4 { 0 } else { 0x20 }))
+            .for_each(|(i, r)| assert_eq!(get_bit_6_5(CalibrationKind::CurrentAdc, i, None), r));
     }
 
     #[test]
     fn test_get_bit_6_5_current_adc_ck_div() {
         vec![0, 0x20, 0x40, 0x60]
-        .into_iter()
-        .enumerate()
-        .map(|(clk_div, res)| (clk_div as u16, res))
-        .for_each(|(clk_div, res)| {
-            (0..7)
-                .for_each(|sr_id| assert_eq!(get_bit_6_5(CalibrationKind::CurrentAdc, sr_id, Some(clk_div)), res));
+            .into_iter()
+            .enumerate()
+            .map(|(clk_div, res)| (clk_div as u16, res))
+            .for_each(|(clk_div, res)| {
+                (0..7).for_each(|sr_id| {
+                    assert_eq!(
+                        get_bit_6_5(CalibrationKind::CurrentAdc, sr_id, Some(clk_div)),
+                        res
+                    )
+                });
             })
     }
 
@@ -134,17 +145,15 @@ mod e192_address_resolver_test {
         ]
         .into_iter()
         .for_each(|ck| {
-            (0..4).for_each(|clk_div|{
-             (0..7)
-                .for_each(|sr_id| {
+            (0..4).for_each(|clk_div| {
+                (0..7).for_each(|sr_id| {
                     assert_eq!(get_bit_6_5(ck, sr_id, Some(clk_div)), 0);
                     assert_eq!(get_bit_6_5(ck, sr_id, None), 0);
                 });
             });
         });
-        
     }
-   
+
     #[test]
     fn test_get_bit_4() {
         assert_eq!(get_bit_4(CalibrationObject::Gain), 0);

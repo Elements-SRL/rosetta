@@ -1,7 +1,4 @@
-use std::{
-    io,
-    path::Path,
-};
+use std::{io, path::Path};
 
 use crate::models::Calibration;
 

@@ -1,11 +1,6 @@
 use clap::Parser;
 use e384_rust::device::Device;
-use rosetta::{
-    devices::{SupportedDevices, e192::E192, syncro::SyncroV1},
-    models::{self, Calibration},
-    stone::Stone,
-    workspace,
-};
+use rosetta::{calibrate, models, workspace};
 use std::path::{Path, PathBuf};
 use tracing_subscriber::EnvFilter;
 
@@ -26,10 +21,6 @@ struct Cli {
     /// Name of the calibration file inside the workspace (not a path).
     #[arg(short = 'c', long, default_value = DEFAULT_CALIB_FILE)]
     calib: String,
-
-    /// Calibrate the device AND unpack the calibration into one TOML per board.
-    #[arg(short = 'f', long, conflicts_with = "only_files")]
-    files: bool,
 
     /// Only unpack the calibration into one TOML per board; do not calibrate. Runs fully
     /// offline (no device connection), so --device is required.
@@ -89,10 +80,7 @@ fn resolve_device(requested: Option<String>) -> String {
 /// Validates the workspace folder exists, exiting with a clear message otherwise.
 fn resolve_workspace(workspace: PathBuf) -> PathBuf {
     if !workspace.is_dir() {
-        eprintln!(
-            "workspace folder '{}' does not exist",
-            workspace.display()
-        );
+        eprintln!("workspace folder '{}' does not exist", workspace.display());
         std::process::exit(1);
     }
     workspace
@@ -108,53 +96,6 @@ fn resolve_calib_file(workspace: &Path, name: &str) -> PathBuf {
     path
 }
 
-/// Calibrates the connected device, then (when `unpack` is set) writes per-board files.
-fn calibrate(
-    device_id: &str,
-    calib: Calibration,
-    workspace: &Path,
-    unpack: bool,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let dev = Device::connect(device_id)
-        .map_err(|e| format!("failed to connect to device (error code {e:?})"))?;
-
-    let di = dev
-        .device_info()
-        .map_err(|e| format!("failed to read device info ({e:?})"))?;
-
-    let device = SupportedDevices::from_device_version_info(&di)
-        .ok_or_else(|| format!("device version {di:?} is incompatible with Rosetta"))?;
-
-    match device {
-        SupportedDevices::SyncroV1 => {
-            let mut stone = Stone::<SyncroV1>::new(calib, dev);
-            stone.apply_complete_calibration();
-            if unpack {
-                workspace::unpack_boards(
-                    stone.calibration(),
-                    workspace,
-                    device_id,
-                    &workspace::read_mapper(workspace),
-                )?;
-            }
-        }
-        SupportedDevices::E192 => {
-            let mut stone = Stone::<E192>::new(calib, dev);
-            stone.apply_complete_calibration();
-            if unpack {
-                workspace::unpack_boards(
-                    stone.calibration(),
-                    workspace,
-                    device_id,
-                    &workspace::read_mapper(workspace),
-                )?;
-            }
-        }
-    }
-
-    Ok(())
-}
-
 fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = resolve_workspace(cli.workspace);
     let calib_file = resolve_calib_file(&workspace, &cli.calib);
@@ -168,7 +109,7 @@ fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let device_id = resolve_device(cli.device);
-    calibrate(&device_id, calib, &workspace, cli.files)
+    calibrate(&device_id, calib, &workspace)
 }
 
 fn main() {

@@ -106,7 +106,7 @@ impl<D: AddressResolver + ResolutionSearch + Debug> Stone<D> {
         self.apply_calib_step(board.rs_correction, CalibrationKind::RsCorrection);
     }
 
-    pub fn apply_complete_calibration(&mut self) {
+    pub fn apply_complete_calibration(&self) {
         if let Err(e) = self.dev.set_debug_bit(0, 14, false, true) {
             tracing::error!("failed to set debug bit: {e:?}");
         }
@@ -116,7 +116,11 @@ impl<D: AddressResolver + ResolutionSearch + Debug> Stone<D> {
         if let Err(e) = self.dev.ok_move_calibration_eeprom_to_rams() {
             tracing::error!("failed to move calibration eeprom to rams: {e:?}");
         }
-        self.calibration.boards.clone().into_iter().for_each(|b| self.apply_board(b));
+        self.calibration
+            .boards
+            .clone()
+            .into_iter()
+            .for_each(|b| self.apply_board(b));
         tracing::info!("Calibration completed!");
         if let Err(e) = self.dev.ok_move_calibration_rams_to_eeprom() {
             tracing::error!("failed to move calibration rams to eeprom: {e:?}");

@@ -1,5 +1,5 @@
+use crate::constants::{E192_VERSION, PATCH_384_VERSION};
 use e384_rust::device_info::DeviceVersionInfo;
-use crate::{constants::{E192_VERSION, PATCH_384_VERSION}};
 
 pub mod e192;
 pub mod syncro;
