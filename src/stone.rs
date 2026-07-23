@@ -10,13 +10,13 @@ use std::{fmt::Debug, marker::PhantomData, path::Path, thread, time::Duration};
 use tracing::instrument;
 
 #[derive(Debug)]
-pub struct Stele<D: AddressResolver + ResolutionSearch + Debug> {
+pub struct Stone<D: AddressResolver + ResolutionSearch + Debug> {
     calibration: Calibration,
     dev: Device,
     d: PhantomData<D>,
 }
 
-impl<D: AddressResolver + ResolutionSearch + Debug> Stele<D> {
+impl<D: AddressResolver + ResolutionSearch + Debug> Stone<D> {
     pub fn new<I: AsRef<Path>>(path: I, dev: Device) -> Result<Self, Box<dyn std::error::Error>> {
         let calibration = read_calibtations(path)?;
         // let dev = Device::connect(device_id)

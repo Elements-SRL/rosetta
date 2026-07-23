@@ -3,7 +3,7 @@ pub mod calibration_kind;
 pub mod devices;
 pub mod models;
 pub mod resolutions;
-pub mod stele;
+pub mod stone;
 pub mod util;
 
 pub mod constants;

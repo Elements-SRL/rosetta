@@ -2,7 +2,7 @@ use clap::Parser;
 use e384_rust::device::Device;
 use rosetta::{
     devices::{SupportedDevices, e192::E192, syncro::SyncroV1},
-    stele::Stele,
+    stone::Stone,
 };
 use std::path::PathBuf;
 use tracing_subscriber::EnvFilter;
@@ -110,10 +110,10 @@ fn run(device_id: &str, calib_path: PathBuf) -> Result<(), Box<dyn std::error::E
 
     match device {
         SupportedDevices::SyncroV1 => {
-            Stele::<SyncroV1>::new(calib_path, dev)?.apply_complete_calibration();
+            Stone::<SyncroV1>::new(calib_path, dev)?.apply_complete_calibration();
         }
         SupportedDevices::E192 => {
-            Stele::<E192>::new(calib_path, dev)?.apply_complete_calibration();
+            Stone::<E192>::new(calib_path, dev)?.apply_complete_calibration();
         }
     }
 
