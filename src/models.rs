@@ -18,11 +18,17 @@ pub struct SamplingRate {
 #[derive(Debug, Deserialize, Clone)]
 pub struct Board {
     pub board_number: u32,
+    #[serde(default)]
     pub current_dac: Vec<RangeBlock>,
+    #[serde(default)]
     pub voltage_adc: Vec<RangeBlock>,
+    #[serde(default)]
     pub shunt_resistance: Vec<RangeBlock>,
+    #[serde(default)]
     pub rs_correction: Vec<RangeBlock>,
+    #[serde(default)]
     pub current_adc: Vec<RangeBlock>,
+    #[serde(default)]
     pub voltage_dac: Vec<RangeBlock>,
 }
 

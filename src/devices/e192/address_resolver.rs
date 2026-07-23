@@ -28,7 +28,7 @@ fn get_bit_8_7(ck: CalibrationKind, range_id: u16) -> u16 {
 fn get_bit_6_5(ck: CalibrationKind, sr_id: u16, clk_div: Option<u16>) -> u16 {
     let p = match ck {
         CalibrationKind::CurrentAdc => match clk_div {
-        Some(ck) => ck << 5,
+        Some(clk) => clk << 5,
         _ => sr_id_to_clock_div(sr_id) << 5,
         },
         _ => 0,
