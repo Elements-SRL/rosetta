@@ -1,4 +1,3 @@
-// Minimum versions;
 pub const PATCH_384_VERSION: u32 = 15;
 pub const E192_VERSION: u32 = 13;
 
