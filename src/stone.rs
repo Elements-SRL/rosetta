@@ -1,12 +1,12 @@
 use crate::{
     address_resolver::AddressResolver,
     calibration_kind::{CalibrationKind, CalibrationObject},
-    models::{Board, Calibration, RangeBlock, read_calibrations},
+    models::{Board, Calibration, RangeBlock},
     resolutions::ResolutionSearch,
     util::divide,
 };
 use e384_rust::device::Device;
-use std::{fmt::Debug, marker::PhantomData, path::Path, thread, time::Duration};
+use std::{fmt::Debug, marker::PhantomData, thread, time::Duration};
 use tracing::instrument;
 
 #[derive(Debug)]
@@ -17,13 +17,16 @@ pub struct Stone<D: AddressResolver + ResolutionSearch + Debug> {
 }
 
 impl<D: AddressResolver + ResolutionSearch + Debug> Stone<D> {
-    pub fn new<I: AsRef<Path>>(path: I, dev: Device) -> Result<Self, Box<dyn std::error::Error>> {
-        let calibration = read_calibrations(path)?;
-        Ok(Self {
+    pub fn new(calibration: Calibration, dev: Device) -> Self {
+        Self {
             dev,
             calibration,
             d: PhantomData,
-        })
+        }
+    }
+
+    pub fn calibration(&self) -> &Calibration {
+        &self.calibration
     }
 
     #[instrument(level = "trace")]

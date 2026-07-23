@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::path::Path;
 
 #[derive(Debug, Deserialize)]
@@ -15,38 +15,38 @@ pub struct SamplingRate {
     pub commlib_indexes: Vec<u32>,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Board {
     pub board_number: u32,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub current_dac: Vec<RangeBlock>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub voltage_adc: Vec<RangeBlock>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub shunt_resistance: Vec<RangeBlock>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub rs_correction: Vec<RangeBlock>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub current_adc: Vec<RangeBlock>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub voltage_dac: Vec<RangeBlock>,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct RangeBlock {
     pub range_name: String,
     pub range_id: u32,
     pub sampling_rates: Vec<RangeSamplingRate>,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct RangeSamplingRate {
     pub sr_id: u32,
     pub clk_div: Option<u16>,
     pub calibrations: Values,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Values {
     #[serde(default)]
     pub gains: Vec<f64>,

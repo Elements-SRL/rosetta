@@ -5,5 +5,6 @@ pub mod models;
 pub mod resolutions;
 pub mod stone;
 pub mod util;
+pub mod workspace;
 
 pub mod constants;
