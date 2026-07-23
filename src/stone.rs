@@ -113,12 +113,7 @@ impl<D: AddressResolver + ResolutionSearch + Debug> Stone<D> {
         if let Err(e) = self.dev.ok_move_calibration_eeprom_to_rams() {
             tracing::error!("failed to move calibration eeprom to rams: {e:?}");
         }
-        self.calibration.boards.clone().into_iter().for_each(|b| {
-            // todo remove this if statement for real deal
-            if b.board_number < 6 {
-                self.apply_board(b)
-            }
-        });
+        self.calibration.boards.clone().into_iter().for_each(|b| self.apply_board(b));
         tracing::info!("Calibration completed!");
         if let Err(e) = self.dev.ok_move_calibration_rams_to_eeprom() {
             tracing::error!("failed to move calibration rams to eeprom: {e:?}");
