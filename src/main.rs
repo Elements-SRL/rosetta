@@ -6,7 +6,37 @@ use tracing_subscriber::EnvFilter;
 
 const DEFAULT_CALIB_FILE: &str = "calibration_file.toml";
 
+/// Rosetta — calibrate e384 devices and export per-board calibration files.
+///
+/// Rosetta operates on a *workspace* folder. Inside it expects a calibration file
+/// (default `calibration_file.toml`) and, optionally, a `mapper.csv` giving each board a
+/// name. It runs in one of two modes:
+///
+///   * default        connect to the device, write the calibration, then export one TOML
+///                     per board into `<workspace>/<device>/`.
+///   * --only-files   skip the device entirely (fully offline) and only export the
+///                     per-board TOML files. Requires --device for the output folder name.
+///
+/// Board files are named `<N>_<mapper-name>.toml` (1-based), or `<N>.toml` when the board
+/// has no mapper entry.
 #[derive(Parser)]
+#[command(
+    name = "rosetta",
+    version,
+    about = "Calibrate e384 devices and export per-board calibration files",
+    after_help = "EXAMPLES:\n  \
+        # Calibrate the connected device and export per-board files:\n  \
+        rosetta ./workspace -d device_sn\n\n  \
+        # Same, but pick the device interactively (omit -d):\n  \
+        rosetta ./workspace\n\n  \
+        # Use a differently named calibration file inside the workspace:\n  \
+        rosetta ./workspace -d device_sn -c my_calibration.toml\n\n  \
+        # Offline: only split the calibration file into per-board files:\n  \
+        rosetta ./workspace -d device_sn --only-files\n\n\
+        LOGGING:\n  \
+        Verbosity is controlled by the RUST_LOG env var (default: info).\n  \
+        e.g. RUST_LOG=trace rosetta ./workspace -d device_sn"
+)]
 struct Cli {
     /// Path to the workspace folder. Must already exist. Rosetta looks here for the
     /// calibration file and the optional `mapper.csv`, and writes per-board output here.
