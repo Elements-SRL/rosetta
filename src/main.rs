@@ -97,6 +97,27 @@ fn resolve_calib_path(requested: Option<PathBuf>) -> PathBuf {
     }
 }
 
+fn run(device_id: &str, calib_path: PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+    let dev = Device::connect(device_id)
+        .map_err(|e| format!("failed to connect to device (error code {e:?})"))?;
+
+    let di = dev
+        .device_info()
+        .map_err(|e| format!("failed to read device info ({e:?})"))?;
+
+    let device = SupportedDevices::from_device_version_info(&di)
+        .ok_or_else(|| format!("device version {di:?} is incompatible with Rosetta"))?;
+
+    match device {
+        SupportedDevices::SyncroV1 | SupportedDevices::E192 => {
+            let mut syncro = Stele::<SyncroV1>::new(calib_path, dev)?;
+            syncro.apply_complete_calibration();
+        }
+    }
+
+    Ok(())
+}
+
 fn main() {
     tracing_subscriber::fmt()
         .with_env_filter(
@@ -109,26 +130,8 @@ fn main() {
     let device_id = resolve_device(cli.device);
     let calib_path = resolve_calib_path(cli.calib_path);
 
-    let d_res = Device::connect(&device_id)
-        .map_err(|e| format!("failed to connect to device (error code {e:?})"));
-    if let Ok(dev) = d_res {
-        match dev.device_info() {
-            Ok(di) => match SupportedDevices::from_device_version_info(&di) {
-                Some(sd) => match sd {
-                    SupportedDevices::SyncroV1 => {
-                        if let Ok(mut syncro) = Stele::<SyncroV1>::new(calib_path, dev) {
-                            syncro.apply_complete_calibration();
-                        }
-                    }
-                    SupportedDevices::E192 => {
-                        if let Ok(mut syncro) = Stele::<SyncroV1>::new(calib_path, dev) {
-                            syncro.apply_complete_calibration();
-                        }
-                    }
-                },
-                None => tracing::error!("Device version: {:?} is incompatible with Rosetta ", di),
-            },
-            Err(e) => tracing::error!("{:?}", e),
-        }
+    if let Err(e) = run(&device_id, calib_path) {
+        tracing::error!("{e}");
+        std::process::exit(1);
     }
 }
