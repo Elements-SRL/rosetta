@@ -48,7 +48,7 @@ pub struct Values {
     pub offsets: Vec<f64>,
 }
 
-pub fn read_calibtations<I: AsRef<Path>>(
+pub fn read_calibrations<I: AsRef<Path>>(
     path: I,
 ) -> Result<Calibration, Box<dyn std::error::Error>> {
     Ok(toml::from_str(&std::fs::read_to_string(path)?)?)
@@ -56,11 +56,11 @@ pub fn read_calibtations<I: AsRef<Path>>(
 
 #[cfg(test)]
 mod models_tests {
-    use crate::models::read_calibtations;
+    use crate::models::read_calibrations;
 
     #[test]
     fn deserialize() -> Result<(), Box<dyn std::error::Error>> {
-        let calib = read_calibtations("src\\assets\\syncropatch.toml");
+        let calib = read_calibrations("src\\assets\\syncropatch.toml");
         println!("{:#?}", calib);
         Ok(())
     }

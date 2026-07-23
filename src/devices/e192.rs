@@ -16,8 +16,8 @@ impl ResolutionSearch for E192 {
         if co == CalibrationObject::Gain {
             return Some(Resolution::new(1.0 / 1024.0));
         }
-        // offsets are stored in the foundamental unit of measurement, so the resoulution
-        // have to be in the same unit (e.g. CurrentAdc is in nA, the offsets are in A, so we multipy by CORRECT_NANO)
+        // offsets are stored in the fundamental unit of measurement, so the resolution
+        // has to be in the same unit (e.g. CurrentAdc is in nA, the offsets are in A, so we multiply by CORRECT_NANO)
         match ck {
             CalibrationKind::CurrentAdc => match range_id {
                 0 => Some(Resolution::new(calc_res(200.0, 16) * CORRECT_PICO)),

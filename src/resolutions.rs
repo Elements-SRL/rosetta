@@ -6,7 +6,7 @@ impl Resolution {
     pub fn new(res: f64) -> Self {
         Self(res)
     }
-    //Might be bettere to treat gains as u16
+    //Might be better to treat gains as u16
     pub fn scale(&self, other: f64) -> i16 {
         (other / self.0).round() as i16
     }

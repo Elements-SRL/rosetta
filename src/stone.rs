@@ -1,7 +1,7 @@
 use crate::{
     address_resolver::AddressResolver,
     calibration_kind::{CalibrationKind, CalibrationObject},
-    models::{Board, Calibration, RangeBlock, read_calibtations},
+    models::{Board, Calibration, RangeBlock, read_calibrations},
     resolutions::ResolutionSearch,
     util::divide,
 };
@@ -18,9 +18,7 @@ pub struct Stone<D: AddressResolver + ResolutionSearch + Debug> {
 
 impl<D: AddressResolver + ResolutionSearch + Debug> Stone<D> {
     pub fn new<I: AsRef<Path>>(path: I, dev: Device) -> Result<Self, Box<dyn std::error::Error>> {
-        let calibration = read_calibtations(path)?;
-        // let dev = Device::connect(device_id)
-        //     .map_err(|e| format!("failed to connect to device (error code {e:?})"))?;
+        let calibration = read_calibrations(path)?;
         Ok(Self {
             dev,
             calibration,
@@ -116,7 +114,7 @@ impl<D: AddressResolver + ResolutionSearch + Debug> Stone<D> {
             tracing::error!("failed to move calibration eeprom to rams: {e:?}");
         }
         self.calibration.boards.clone().into_iter().for_each(|b| {
-            // todo rmeove this if statemente for real deal
+            // todo remove this if statement for real deal
             if b.board_number < 6 {
                 self.apply_board(b)
             }
