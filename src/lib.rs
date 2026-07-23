@@ -7,5 +7,3 @@ pub mod stone;
 pub mod util;
 
 pub mod constants;
-
-pub const WRITE_TIME: u64 = 1;

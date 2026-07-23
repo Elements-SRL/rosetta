@@ -27,7 +27,7 @@ fn get_bit_8_7(ck: CalibrationKind, range_id: u16) -> u16 {
 
 fn get_bit_6_5(ck: CalibrationKind, sr_id: u16, clk_div: Option<u16>) -> u16 {
     let p = match clk_div {
-        Some(ck) => ck,
+        Some(ck) => ck << 4,
         _ => match ck {
             CalibrationKind::CurrentAdc => sr_id_to_clock_div(sr_id) << 4,
             _ => 0,
@@ -37,11 +37,12 @@ fn get_bit_6_5(ck: CalibrationKind, sr_id: u16, clk_div: Option<u16>) -> u16 {
 }
 
 fn get_bit_4(co: CalibrationObject) -> u16 {
-    if co == CalibrationObject::Gain { 0 } else { 1 }
+    let p = if co == CalibrationObject::Gain { 0 } else { 1 }; 
+    p << 3 & 0x8
 }
 
 fn get_bit_3_2_1(ch_idx: u16) -> u16 {
-    ch_idx << 1 & 0x1E
+    ch_idx << 1 & 0xE
 }
 
 impl AddressResolver for E192 {
