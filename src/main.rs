@@ -23,7 +23,7 @@ const DEFAULT_CALIB_FILE: &str = "calibration_file.toml";
 #[command(
     name = "rosetta",
     version,
-    about = "Calibrate e384 devices and export per-board calibration files",
+    about = "Write calibrations to eeprom on elements devices and export per-board calibration files",
     after_help = "EXAMPLES:\n  \
         # Calibrate the connected device and export per-board files:\n  \
         rosetta ./workspace -d device_sn\n\n  \
