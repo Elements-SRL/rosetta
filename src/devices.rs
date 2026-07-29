@@ -13,7 +13,10 @@ impl SupportedDevices {
     pub fn from_device_version_info(di: &DeviceVersionInfo) -> Option<Self> {
         match di.device_version {
             PATCH_384_VERSION => match di.device_sub_version {
-                7 => Some(SupportedDevices::SyncroV1),
+                3 | 4 | 7  => match di.fw_major {
+                    7 => Some(SupportedDevices::SyncroV1),
+                    _ => None,
+                },
                 _ => None,
             },
             E192_VERSION => match di.device_sub_version {
