@@ -40,7 +40,7 @@ DisableProgramGroupPage=yes
 ; Remove the following line to run in administrative install mode (install for all users).
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
-OutputDir=installer
+OutputDir=target
 OutputBaseFilename=rosetta_setup
 SolidCompression=yes
 WizardStyle=modern dynamic
