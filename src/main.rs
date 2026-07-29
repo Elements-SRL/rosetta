@@ -77,58 +77,53 @@ fn prompt_choice(items: &[String], label: &str) -> usize {
     }
 }
 
-fn resolve_device(requested: Option<String>) -> String {
-    let devices = Device::list_devices().unwrap_or_else(|e| {
-        eprintln!("failed to list devices (error code {e:?})");
-        std::process::exit(1);
-    });
+fn resolve_device(requested: Option<String>) -> Result<String, Box<dyn std::error::Error>> {
+    let devices =
+        Device::list_devices().map_err(|e| format!("failed to list devices (error code {e:?})"))?;
 
     if devices.is_empty() {
-        eprintln!("no devices found");
-        std::process::exit(1);
+        return Err("no devices found".into());
     }
 
     match requested {
         Some(name) => {
             if devices.contains(&name) {
-                name
+                Ok(name)
             } else {
-                eprintln!("device '{name}' not found. Available devices:");
+                let mut msg = format!("device '{name}' not found. Available devices:");
                 for d in &devices {
-                    eprintln!("  {d}");
+                    msg.push_str(&format!("\n  {d}"));
                 }
-                std::process::exit(1);
+                Err(msg.into())
             }
         }
         None => {
             let idx = prompt_choice(&devices, "device");
-            devices[idx].clone()
+            Ok(devices[idx].clone())
         }
     }
 }
 
-/// Validates the workspace folder exists, exiting with a clear message otherwise.
-fn resolve_workspace(workspace: PathBuf) -> PathBuf {
+/// Validates the workspace folder exists.
+fn resolve_workspace(workspace: PathBuf) -> Result<PathBuf, Box<dyn std::error::Error>> {
     if !workspace.is_dir() {
-        eprintln!("workspace folder '{}' does not exist", workspace.display());
-        std::process::exit(1);
+        return Err(format!("workspace folder '{}' does not exist", workspace.display()).into());
     }
-    workspace
+    Ok(workspace)
 }
 
-/// Resolves the calibration file inside the workspace, exiting if it is missing.
-fn resolve_calib_file(workspace: &Path, name: &str) -> PathBuf {
+/// Resolves the calibration file inside the workspace.
+fn resolve_calib_file(workspace: &Path, name: &str) -> Result<PathBuf, Box<dyn std::error::Error>> {
     let path = workspace.join(name);
     if !path.is_file() {
-        eprintln!("calibration file '{name}' not found in workspace");
-        std::process::exit(1);
+        return Err(format!("calibration file '{name}' not found in workspace").into());
     }
-    path
+    Ok(path)
 }
 
 fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
-    let workspace = resolve_workspace(cli.workspace);
-    let calib_file = resolve_calib_file(&workspace, &cli.calib);
+    let workspace = resolve_workspace(cli.workspace)?;
+    let calib_file = resolve_calib_file(&workspace, &cli.calib)?;
     let calib = models::read_calibrations(&calib_file)
         .map_err(|e| format!("failed to read calibration file '{}': {e}", cli.calib))?;
 
@@ -138,7 +133,7 @@ fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    let device_id = resolve_device(cli.device);
+    let device_id = resolve_device(cli.device)?;
     calibrate(&device_id, calib, &workspace)
 }
 
@@ -148,7 +143,6 @@ fn main() {
             EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
         )
         .init();
-    tracing::info!("app started");
 
     let cli = Cli::parse();
 
