@@ -44,12 +44,14 @@ OutputDir=target
 OutputBaseFilename=rosetta_setup
 SolidCompression=yes
 WizardStyle=modern dynamic
+; Broadcast WM_SETTINGCHANGE so new shells pick up the PATH change.
+ChangesEnvironment=yes
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+Name: "addtopath"; Description: "Add {#MyAppName} to PATH"; GroupDescription: "Command line:"
 
 [Files]
 Source: "target\release\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
@@ -58,10 +60,69 @@ Source: "vendor\dlls\MPSSE.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "vendor\dlls\okFrontPanel.dll"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
-[Icons]
-Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+[Registry]
+; PATH lives in a different hive depending on whether the user picked a
+; per-user or an all-users install, so there is one entry for each.
+; No uninsdeletevalue here: that would wipe the whole Path value, not just
+; our segment. Removal is handled in [Code] below.
+Root: HKCU; Subkey: "Environment"; ValueType: expandsz; ValueName: "Path"; \
+    ValueData: "{olddata};{app}"; Tasks: addtopath; Check: NeedsAddPathHKCU
+Root: HKLM; Subkey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"; \
+    ValueType: expandsz; ValueName: "Path"; ValueData: "{olddata};{app}"; \
+    Tasks: addtopath; Check: NeedsAddPathHKLM
 
-[Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+[Code]
+const
+  EnvKeyHKLM = 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment';
+
+{ Semicolon-wrapped compare so C:\rosetta doesn't match inside C:\rosetta-old. }
+function PathMissing(RootKey: Integer; SubKey: String): Boolean;
+var
+  OrigPath: String;
+begin
+  if not RegQueryStringValue(RootKey, SubKey, 'Path', OrigPath) then
+  begin
+    Result := True;
+    exit;
+  end;
+  Result := Pos(';' + UpperCase(ExpandConstant('{app}')) + ';',
+                ';' + UpperCase(OrigPath) + ';') = 0;
+end;
+
+function NeedsAddPathHKCU: Boolean;
+begin
+  Result := (not IsAdminInstallMode) and PathMissing(HKEY_CURRENT_USER, 'Environment');
+end;
+
+function NeedsAddPathHKLM: Boolean;
+begin
+  Result := IsAdminInstallMode and PathMissing(HKEY_LOCAL_MACHINE, EnvKeyHKLM);
+end;
+
+procedure RemoveFromPath(RootKey: Integer; SubKey: String);
+var
+  OrigPath, Work, Target: String;
+  P: Integer;
+begin
+  if not RegQueryStringValue(RootKey, SubKey, 'Path', OrigPath) then exit;
+  Target := ';' + UpperCase(ExpandConstant('{app}')) + ';';
+  Work := ';' + OrigPath + ';';
+  P := Pos(Target, UpperCase(Work));
+  if P = 0 then exit;
+  Delete(Work, P, Length(Target) - 1);
+  RegWriteExpandStringValue(RootKey, SubKey, 'Path',
+                            Copy(Work, 2, Length(Work) - 2));
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+  if CurUninstallStep = usPostUninstall then
+  begin
+    { Removal is a no-op when our segment isn't there, so try HKCU either way
+      rather than trusting the install mode to round-trip into the uninstaller. }
+    RemoveFromPath(HKEY_CURRENT_USER, 'Environment');
+    if IsAdminInstallMode then
+      RemoveFromPath(HKEY_LOCAL_MACHINE, EnvKeyHKLM);
+  end;
+end;
 
