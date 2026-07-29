@@ -3,7 +3,12 @@
 ; Non-commercial use only
 
 #define MyAppName "rosetta"
-#define MyAppVersion "0.1.0"
+; Version comes from Cargo.toml, passed in by the build as
+;   ISCC /DMyAppVersion="x.y.z"
+; The fallback below only applies when compiling setup.iss by hand.
+#ifndef MyAppVersion
+  #define MyAppVersion "0.0.0-dev"
+#endif
 #define MyAppPublisher "Elements S.R.L."
 #define MyAppURL "https://elements-ic.com/"
 #define MyAppExeName "rosetta.exe"
@@ -35,7 +40,7 @@ DisableProgramGroupPage=yes
 ; Remove the following line to run in administrative install mode (install for all users).
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
-OutputDir=C:\Users\lross\development\rosetta\installer
+OutputDir=installer
 OutputBaseFilename=rosetta_setup
 SolidCompression=yes
 WizardStyle=modern dynamic
@@ -47,10 +52,10 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "{app}\target\release\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{app}\vendor\dlls\FTD2XX.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{app}\vendor\dlls\MPSSE.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{app}\vendor\dlls\okFrontPanel.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "target\release\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "vendor\dlls\FTD2XX.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "vendor\dlls\MPSSE.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "vendor\dlls\okFrontPanel.dll"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
