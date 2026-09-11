@@ -5,8 +5,10 @@ use crate::{
     util::{Lsb, Msb},
 };
 
+// BUG IN THE TOML, the sr is only 0 or 1 making the discrimination on the sr_id as it should wrong
+// It should be if sr_id < 3 { 2 } else { 1 } but given this issue it had to be reworked
 fn sr_id_to_clock_div(sr_id: u16) -> u16 {
-    if sr_id < 3 { 2 } else { 1 }
+    if sr_id == 0 { 2 } else { 1 }
 }
 
 fn calibration_object_to_bit(co: CalibrationObject) -> u16 {
@@ -82,10 +84,9 @@ mod address_resolver_test {
     const R2: core::ops::Range<u16> = 2..3;
     const R3: core::ops::Range<u16> = 3..4;
 
-    const R0_3: core::ops::Range<u16> = 0..3;
     const R0_4: core::ops::Range<u16> = 0..4;
     const R0_5: core::ops::Range<u16> = 0..5;
-    const R3_5: core::ops::Range<u16> = 3..5;
+    const R1_3: core::ops::Range<u16> = 1..3;
 
     fn bit_7_6_5_helper(
         sr_range: core::ops::Range<u16>,
@@ -96,7 +97,6 @@ mod address_resolver_test {
     ) {
         sr_range.for_each(|sr| {
             adc_range.clone().for_each(|adc_range| {
-                // slow
                 assert_eq!(get_bit_7_6_5(ck, sr, adc_range, co), res);
             })
         });
@@ -135,10 +135,10 @@ mod address_resolver_test {
         let ca = CalibrationKind::CurrentAdc;
         let g = CalibrationObject::Gain;
         let o = CalibrationObject::Offset;
-        bit_7_6_5_helper(R0_3, R0_4, ca, g, 0x80);
-        bit_7_6_5_helper(R0_3, R0_4, ca, o, 0xA0);
-        bit_7_6_5_helper(R3_5, R0_4, ca, g, 0x40);
-        bit_7_6_5_helper(R3_5, R0_4, ca, o, 0x60);
+        bit_7_6_5_helper(R0, R0_4, ca, g, 0x80);
+        bit_7_6_5_helper(R0, R0_4, ca, o, 0xA0);
+        bit_7_6_5_helper(R1_3, R0_4, ca, g, 0x40);
+        bit_7_6_5_helper(R1_3, R0_4, ca, o, 0x60);
     }
 
     #[test]
@@ -146,10 +146,10 @@ mod address_resolver_test {
         let va = CalibrationKind::VoltageAdc;
         let g = CalibrationObject::Gain;
         let o = CalibrationObject::Offset;
-        bit_7_6_5_helper(R0_3, R0_4, va, g, 0x80);
-        bit_7_6_5_helper(R0_3, R0_4, va, o, 0xA0);
-        bit_7_6_5_helper(R3_5, R0_4, va, g, 0x40);
-        bit_7_6_5_helper(R3_5, R0_4, va, o, 0x60);
+        bit_7_6_5_helper(R0, R0_4, va, g, 0x80);
+        bit_7_6_5_helper(R0, R0_4, va, o, 0xA0);
+        bit_7_6_5_helper(R1_3, R0_4, va, g, 0x40);
+        bit_7_6_5_helper(R1_3, R0_4, va, o, 0x60);
     }
 
     #[test]

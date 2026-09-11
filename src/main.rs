@@ -13,9 +13,9 @@ const DEFAULT_CALIB_FILE: &str = "calibration_file.toml";
 /// name. It runs in one of two modes:
 ///
 ///   * default        connect to the device, write the calibration, then export one TOML
-///                     per board into `<workspace>/<device>/`.
+///     per board into `<workspace>/<device>/`.
 ///   * --only-files   skip the device entirely (fully offline) and only export the
-///                     per-board TOML files. Requires --device for the output folder name.
+///     per-board TOML files. Requires --device for the output folder name.
 ///
 /// Board files are named `<N>_<mapper-name>.toml` (1-based), or `<N>.toml` when the board
 /// has no mapper entry.
