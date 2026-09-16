@@ -1,6 +1,6 @@
 [package]
 name = "rosetta"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2024"
 authors = ["Luca Rossi"]
 description = "Write calibrations to eeprom on elements devices and export per-board calibration files"
