@@ -21,9 +21,9 @@ pub fn read_mapper(workspace: &Path) -> Vec<String> {
 
 /// Unpacks the calibration into one TOML file per board under `workspace/<sn>/`.
 ///
-/// Files are named `<N>_<mapper_row>.toml` (1-based `N`), falling back to `<N>.toml` when
-/// there is no mapper row for that board (absent mapper, fewer rows than boards, or an
-/// empty row). Each file contains only the [`Board`](crate::models::Board) block.
+/// Files are named `<mapper_row>.toml`, falling back to `<N>.toml` (1-based `N`) when there
+/// is no mapper row for that board (absent mapper, fewer rows than boards, or an empty row).
+/// Each file contains only the [`Board`](crate::models::Board) block.
 pub fn unpack_boards(
     calib: &Calibration,
     workspace: &Path,
@@ -36,7 +36,7 @@ pub fn unpack_boards(
     for (i, board) in calib.boards.iter().enumerate() {
         let n = i + 1;
         let file_name = match mapper.get(i).filter(|name| !name.is_empty()) {
-            Some(name) => format!("{n}_{name}.toml"),
+            Some(name) => format!("{name}.toml"),
             None => format!("{n}.toml"),
         };
         let contents = toml::to_string_pretty(board)
@@ -107,10 +107,12 @@ mod workspace_tests {
         unpack_boards(&calib, &dir, "SN123", &["alpha".to_string()]).unwrap();
 
         let out = dir.join("SN123");
-        let mapped = out.join("1_alpha.toml");
+        let mapped = out.join("alpha.toml");
         let fallback = out.join("2.toml");
         assert!(mapped.is_file());
         assert!(fallback.is_file());
+        // No leading index prefix on mapped files (e.g. old "1_alpha.toml" form).
+        assert!(!out.join("1_alpha.toml").exists());
 
         // Each produced file must parse back as a Board (Serialize/Deserialize round-trip).
         let b1: Board = toml::from_str(&fs::read_to_string(&mapped).unwrap()).unwrap();

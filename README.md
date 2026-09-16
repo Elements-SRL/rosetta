@@ -76,8 +76,8 @@ my_workspace/
 ├── calibration_file.toml   # required — the calibration to apply/export (name configurable)
 ├── mapper.csv              # optional — one board name per row
 └── <device_sn>/            # created by Rosetta — per-board output files
-    ├── 1_sn8.toml
-    ├── 2_sn1.toml
+    ├── sn8.toml
+    ├── sn1.toml
     └── ...
 ```
 
@@ -248,16 +248,16 @@ Rosetta writes one TOML per board into `<workspace>/<device>/`, where `<device>`
 Each file contains **only that board's block** (no shared `sampling_rates`), and re-parses cleanly
 as a board. Filenames are:
 
-- `<N>_<mapper-name>.toml` — 1-based index `N` prefixed to the board's `mapper.csv` name.
+- `<mapper-name>.toml` — board's `mapper.csv` name.
 - `<N>.toml` — fallback when the board has no (non-empty) mapper entry.
 
 Example, for a device `device_sn` with the `mapper.csv` above and 5 boards:
 
 ```
 device_sn/
-├── 1_sn8.toml
-├── 2_sn1.toml
-├── 3_sn5.toml
+├── sn8.toml
+├── sn1.toml
+├── sn5.toml
 ├── 4.toml
 └── 5.toml
 ```

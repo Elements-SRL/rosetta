@@ -17,8 +17,8 @@ const DEFAULT_CALIB_FILE: &str = "calibration_file.toml";
 ///   * --only-files   skip the device entirely (fully offline) and only export the
 ///     per-board TOML files. Requires --device for the output folder name.
 ///
-/// Board files are named `<N>_<mapper-name>.toml` (1-based), or `<N>.toml` when the board
-/// has no mapper entry.
+/// Board files are named `<mapper-name>.toml`, or `<N>.toml` (1-based) when the board has no
+/// mapper entry.
 #[derive(Parser)]
 #[command(
     name = "rosetta",
