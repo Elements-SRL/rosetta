@@ -1,7 +1,7 @@
 use crate::{
     address_resolver::AddressResolver,
     calibration_kind::{CalibrationKind, CalibrationObject},
-    devices::e192::E192,
+    devices::e192::{E192, El03c},
     util::{Lsb, Msb},
 };
 
@@ -45,7 +45,7 @@ fn get_bit_3_2_1(ch_idx: u16) -> u16 {
     ch_idx << 1 & 0xE
 }
 
-impl AddressResolver for E192 {
+impl AddressResolver for E192<El03c> {
     fn resolve(
         ck: CalibrationKind,
         range_id: u32,
@@ -54,8 +54,8 @@ impl AddressResolver for E192 {
         ch_idx: u16,
         clk_div: Option<u16>,
     ) -> (Lsb<u16>, Msb<u16>) {
-        let range_id = range_id as u16;
-        let sr_id = sr_id as u16;
+        let range_id = u16::try_from(range_id).expect("range_id does not fit in a u16");
+        let sr_id = u16::try_from(sr_id).expect("sr_id does not fit in a u16");
         let b9 = get_bit_9(ck);
         let b8_7 = get_bit_8_7(ck, range_id);
         let b6_5 = get_bit_6_5(ck, sr_id, clk_div);

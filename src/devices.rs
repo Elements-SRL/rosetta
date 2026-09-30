@@ -6,7 +6,8 @@ pub mod syncro;
 
 pub enum SupportedDevices {
     SyncroV1,
-    E192,
+    E192El03c,
+    E192El08b,
 }
 
 impl SupportedDevices {
@@ -20,7 +21,8 @@ impl SupportedDevices {
                 _ => None,
             },
             E192_VERSION => match di.device_sub_version {
-                7 => Some(SupportedDevices::E192),
+                7 => Some(SupportedDevices::E192El03c),
+                8 => Some(SupportedDevices::E192El08b),
                 _ => None,
             },
             _ => None,

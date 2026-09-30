@@ -1,17 +1,23 @@
+use std::marker::PhantomData;
+
 use crate::{
     calibration_kind::{
-        CORRECT_MILLIS, CORRECT_NANO, CORRECT_PICO, CalibrationKind, CalibrationObject,
-    },
-    resolutions::{Resolution, ResolutionSearch},
-    util::calc_res,
+        CORRECT_MICRO, CORRECT_MILLIS, CORRECT_NANO, CORRECT_PICO, CalibrationKind, CalibrationObject,
+    }, resolutions::{Resolution, ResolutionSearch}, util::calc_res,
 };
 
 mod address_resolver;
+mod el08b_address_resolver;
 
 #[derive(Debug)]
-pub struct E192;
+pub struct El03c;
+#[derive(Debug)]
+pub struct El08b;
 
-impl ResolutionSearch for E192 {
+#[derive(Debug)]
+pub struct E192<T>(PhantomData<T>);
+
+impl ResolutionSearch for E192<El03c> {
     fn find(ck: CalibrationKind, co: CalibrationObject, range_id: u32) -> Option<Resolution> {
         if co == CalibrationObject::Gain {
             return Some(Resolution::new(1.0 / 1024.0));
@@ -24,6 +30,31 @@ impl ResolutionSearch for E192 {
                 1 => Some(Resolution::new(calc_res(2.0, 16) * CORRECT_NANO)),
                 2 => Some(Resolution::new(calc_res(20.0, 16) * CORRECT_NANO)),
                 3 => Some(Resolution::new(calc_res(200.0, 16) * CORRECT_NANO)),
+                _ => None,
+            },
+            CalibrationKind::VoltageAdc => match range_id {
+                0 => Some(Resolution::new(calc_res(512.0, 10) * CORRECT_MILLIS)),
+                _ => None,
+            },
+            _ => None,
+        }
+    }
+}
+
+
+impl ResolutionSearch for E192<El08b> {
+    fn find(ck: CalibrationKind, co: CalibrationObject, range_id: u32) -> Option<Resolution> {
+        if co == CalibrationObject::Gain {
+            return Some(Resolution::new(1.0 / 1024.0));
+        }
+        // offsets are stored in the fundamental unit of measurement, so the resolution
+        // has to be in the same unit (e.g. CurrentAdc is in nA, the offsets are in A, so we multiply by CORRECT_NANO)
+        match ck {
+            CalibrationKind::CurrentAdc => match range_id {
+                0 => Some(Resolution::new(calc_res(1.0, 16) * CORRECT_MICRO)),
+                1 => Some(Resolution::new(calc_res(100.0, 16) * CORRECT_NANO)),
+                2 => Some(Resolution::new(calc_res(10.0, 16) * CORRECT_NANO)),
+                3 => Some(Resolution::new(calc_res(1.0, 16) * CORRECT_NANO)),
                 _ => None,
             },
             CalibrationKind::VoltageAdc => match range_id {

@@ -21,7 +21,11 @@
 
 use crate::{
     address_resolver::AddressResolver,
-    devices::{SupportedDevices, e192::E192, syncro::SyncroV1},
+    devices::{
+        SupportedDevices,
+        e192::{E192, El03c, El08b},
+        syncro::SyncroV1,
+    },
     models::Calibration,
     resolutions::ResolutionSearch,
     stone::Stone,
@@ -63,9 +67,16 @@ pub fn calibrate(
         SupportedDevices::SyncroV1 => {
             run_calib_ops(Stone::<SyncroV1>::new(calib, dev), workspace, device_id)
         }
-        SupportedDevices::E192 => {
-            run_calib_ops(Stone::<E192>::new(calib, dev), workspace, device_id)
-        }
+        SupportedDevices::E192El03c => run_calib_ops(
+            Stone::<E192<El03c>>::new(calib, dev),
+            workspace,
+            device_id,
+        ),
+        SupportedDevices::E192El08b => run_calib_ops(
+            Stone::<E192<El08b>>::new(calib, dev),
+            workspace,
+            device_id,
+        ),
     }
 }
 
