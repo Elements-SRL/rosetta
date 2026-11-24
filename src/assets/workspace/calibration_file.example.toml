@@ -1,0 +1,79 @@
+# EXAMPLE CALIBRATION - FAKE VALUES, DO NOT WRITE TO A DEVICE.
+#
+# This file only shows the format. Rosetta does not load it unless you ask for it
+# by name, so it cannot be written to a device by accident. To try the offline export:
+#
+#     rosetta export -d demo -c calibration_file.example.toml
+#
+# Real calibrations go in `calibration_file.toml` (the default name) or any name passed with -c.
+
+# Sampling rates shared by every board. `id` is referenced by `sr_id` below.
+[[sampling_rates]]
+name = "slow"
+id = 0
+values = [5.0, 10.0, 20.0]
+commlib_indexes = [0, 1, 2]
+
+[[sampling_rates]]
+name = "fast"
+id = 1
+values = [40.0, 80.0]
+commlib_indexes = [3, 4]
+
+# ---------------------------------------------------------------------------------------
+# One [[boards]] block per board, in order. mapper.csv names them by this order.
+# Calibration kinds (all optional): current_adc, current_dac, voltage_adc, voltage_dac,
+# shunt_resistance, rs_correction. `gains` / `offsets` hold one value per channel.
+# ---------------------------------------------------------------------------------------
+[[boards]]
+board_number = 0
+
+[[boards.current_adc]]
+range_name = "10nA"
+range_id = 0
+
+[[boards.current_adc.sampling_rates]]
+sr_id = 0
+[boards.current_adc.sampling_rates.calibrations]
+gains = [1.28, 1.27, 1.30, 1.31]
+offsets = [-2.85e-9, -2.78e-9, -3.08e-9, -3.21e-9]
+
+[[boards.current_adc.sampling_rates]]
+sr_id = 1
+# clk_div = 1   # optional
+[boards.current_adc.sampling_rates.calibrations]
+gains = [1.29, 1.28, 1.30, 1.31]
+offsets = [-2.84e-9, -2.77e-9, -3.07e-9, -3.20e-9]
+
+[[boards.voltage_dac]]
+range_name = "500mV"
+range_id = 0
+
+[[boards.voltage_dac.sampling_rates]]
+sr_id = 0
+[boards.voltage_dac.sampling_rates.calibrations]
+gains = [1.0, 1.0, 1.0, 1.0]
+offsets = [0.0009, 0.0021, -0.0013, -0.0013]
+
+# A kind may carry only offsets (or only gains); the missing list defaults to empty.
+[[boards.shunt_resistance]]
+range_name = "10nA"
+range_id = 0
+
+[[boards.shunt_resistance.sampling_rates]]
+sr_id = 0
+[boards.shunt_resistance.sampling_rates.calibrations]
+offsets = [1.23e-12, 8.53e-13, -2.23e-12, -2.61e-14]
+
+[[boards]]
+board_number = 1
+
+[[boards.current_adc]]
+range_name = "10nA"
+range_id = 0
+
+[[boards.current_adc.sampling_rates]]
+sr_id = 0
+[boards.current_adc.sampling_rates.calibrations]
+gains = [1.31, 1.29, 1.27, 1.30]
+offsets = [-3.10e-9, -2.95e-9, -2.80e-9, -3.00e-9]
