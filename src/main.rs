@@ -26,8 +26,6 @@ type Res<T> = Result<T, Box<dyn std::error::Error>>;
     after_help = "EXAMPLES:\n  \
         # First time: choose the workspace folder and create the sample files:\n  \
         rosetta init\n\n  \
-        # Same, without the prompt:\n  \
-        rosetta init D:\\calibrations\\rosetta\n\n  \
         # Calibrate the connected device and export per-board files:\n  \
         rosetta calibrate -d device_sn\n\n  \
         # Same, but pick the device interactively (omit -d):\n  \
@@ -49,10 +47,7 @@ struct Cli {
 enum Command {
     /// Choose the workspace folder and fill it with a README and sample files. Run it again to
     /// change folder or to recreate missing sample files (existing files are kept).
-    Init {
-        /// Workspace folder. If omitted, you'll be asked (Enter accepts the proposed one).
-        path: Option<PathBuf>,
-    },
+    Init,
 
     /// Write the calibration to a device, export one TOML per board into `<device>/`, and
     /// snapshot the inputs and outputs into `archive/<timestamp>_<device>/`.
@@ -177,21 +172,17 @@ fn read_calib(workspace: &Path, name: &str) -> Res<(PathBuf, models::Calibration
     Ok((path, calib))
 }
 
-fn init(path: Option<PathBuf>) -> Res<()> {
+fn init() -> Res<()> {
     let cfg_path = config::config_path()?;
-    let chosen = match path {
-        Some(p) => p,
-        None => {
-            let proposed = config::load(&cfg_path)?
-                .map(|c| c.workspace)
-                .unwrap_or_else(config::default_workspace);
-            let answer = ask(&format!("Workspace folder [{}]: ", proposed.display()))?;
-            if answer.is_empty() {
-                proposed
-            } else {
-                PathBuf::from(answer)
-            }
-        }
+    let proposed = config::load(&cfg_path)?
+        .map(|c| c.workspace)
+        .unwrap_or_else(config::default_workspace);
+
+    let answer = ask(&format!("Workspace folder [{}]: ", proposed.display()))?;
+    let chosen = if answer.is_empty() {
+        proposed
+    } else {
+        PathBuf::from(answer)
     };
     let workspace = std::path::absolute(&chosen)?;
 
@@ -250,7 +241,7 @@ fn reset(yes: bool) -> Res<()> {
 
 fn run(cli: Cli) -> Res<()> {
     match cli.command {
-        Command::Init { path } => init(path),
+        Command::Init => init(),
         Command::Reset { yes } => reset(yes),
         Command::Export { device, calib } => {
             let ws = load_workspace()?;
