@@ -17,7 +17,8 @@
 //!   [`devices::e192`]) implementing [`resolutions::ResolutionSearch`] and
 //!   [`address_resolver::AddressResolver`].
 //! * [`resolutions`] / [`address_resolver`] — value scaling and RAM address mapping.
-//! * [`workspace`] — `mapper.csv` parsing and per-board file export.
+//! * [`workspace`] — workspace setup/reset, `mapper.csv` parsing, per-board export, archive.
+//! * [`config`] — the saved workspace location.
 
 use crate::{
     address_resolver::AddressResolver,
@@ -31,9 +32,13 @@ use crate::{
     stone::Stone,
 };
 use e384_rust::device::Device;
-use std::{fmt::Debug, path::Path};
+use std::{
+    fmt::Debug,
+    path::{Path, PathBuf},
+};
 pub mod address_resolver;
 pub mod calibration_kind;
+pub mod config;
 pub mod constants;
 pub mod devices;
 pub mod models;
@@ -43,7 +48,7 @@ pub mod util;
 pub mod workspace;
 
 /// Connects to `device_id`, applies the full calibration, then exports one TOML per board
-/// into `workspace/<device_id>/`.
+/// into `workspace/<device_id>/`, returning the written board files.
 ///
 /// The device model is detected from its version info; unsupported devices return an error.
 /// Returns an error if the device cannot be connected to or its info cannot be read; per-RAM
@@ -52,7 +57,7 @@ pub fn calibrate(
     device_id: &str,
     calib: Calibration,
     workspace: &Path,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<Vec<PathBuf>, Box<dyn std::error::Error>> {
     let dev = Device::connect(device_id)
         .map_err(|e| format!("failed to connect to device (error code {e:?})"))?;
 
@@ -67,16 +72,12 @@ pub fn calibrate(
         SupportedDevices::SyncroV1 => {
             run_calib_ops(Stone::<SyncroV1>::new(calib, dev), workspace, device_id)
         }
-        SupportedDevices::E192El03c => run_calib_ops(
-            Stone::<E192<El03c>>::new(calib, dev),
-            workspace,
-            device_id,
-        ),
-        SupportedDevices::E192El08b => run_calib_ops(
-            Stone::<E192<El08b>>::new(calib, dev),
-            workspace,
-            device_id,
-        ),
+        SupportedDevices::E192El03c => {
+            run_calib_ops(Stone::<E192<El03c>>::new(calib, dev), workspace, device_id)
+        }
+        SupportedDevices::E192El08b => {
+            run_calib_ops(Stone::<E192<El08b>>::new(calib, dev), workspace, device_id)
+        }
     }
 }
 
@@ -88,13 +89,12 @@ pub fn run_calib_ops<D: AddressResolver + ResolutionSearch + Debug>(
     stone: Stone<D>,
     workspace: &Path,
     device_id: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<Vec<PathBuf>, Box<dyn std::error::Error>> {
     stone.apply_complete_calibration();
-    workspace::unpack_boards(
+    Ok(workspace::unpack_boards(
         stone.calibration(),
         workspace,
         device_id,
         &workspace::read_mapper(workspace),
-    )?;
-    Ok(())
+    )?)
 }

@@ -1,0 +1,19 @@
+# mapper.csv - gives each board's output file a name.
+#
+# One name per line. Lines map to boards BY POSITION, in the order the boards
+# appear in the calibration file:
+#   1st name line -> 1st [[boards]] entry
+#   2nd name line -> 2nd [[boards]] entry, and so on.
+# (board_number inside the calibration file is NOT used for the mapping.)
+#
+# Rules:
+#   - Lines starting with '#' are comments and are skipped (they don't count as a board).
+#   - Only the text before the first comma is used, trimmed: "sn8," and " sn8 " both give "sn8".
+#   - An empty line keeps that board's default numeric name (e.g. 3.toml).
+#   - Boards without a line (or with no mapper.csv at all) get numeric names: 1.toml, 2.toml, ...
+#   - Extra lines beyond the number of boards are ignored.
+#
+# Example for a 3-board device - remove the '# ' in front to use it:
+# sn8
+# sn1
+# sn5
