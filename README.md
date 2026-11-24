@@ -61,7 +61,10 @@ cargo build --release
 ```
 
 On Windows, `build-installer.ps1` builds an Inno Setup installer (`setup.iss`) that can add
-Rosetta to `PATH`.
+Rosetta to `PATH`. The installer also asks for the workspace folder (proposing the one saved by a
+previous install, else `Documents\rosetta`) and runs `rosetta init "<folder>"` at the end, so the
+workspace is ready right away. Existing files in the folder are kept. If that step fails, the
+installer says so and you can run `rosetta init` by hand.
 
 Terminal help is always available:
 
@@ -87,8 +90,9 @@ The chosen folder is saved in `%APPDATA%\rosetta\config.toml` and used by every 
 Then put the real calibration in the workspace as `calibration_file.toml`, edit `mapper.csv`, and
 run `rosetta calibrate`.
 
-Run `init` again at any time to switch to another folder or to recreate missing sample files.
-Existing files are never overwritten.
+Pass the folder to skip the prompt: `rosetta init D:\calibrations\rosetta`. Run `init` again at
+any time to switch to another folder or to recreate missing sample files. Existing files are
+never overwritten.
 
 > The example calibration is deliberately **not** named `calibration_file.toml`, so its fake values
 > cannot be written to a device by accident. Try it offline with
@@ -120,7 +124,7 @@ rosetta <COMMAND> [OPTIONS]
 
 | Command | Device needed? | What it does |
 |---------|----------------|--------------|
-| `init` | No | Choose the workspace folder and write the README and sample files. |
+| `init [PATH]` | No | Choose the workspace folder (prompted if `PATH` is omitted) and write the README and sample files. |
 | `calibrate [-d <sn>] [-c <file>]` | Yes | Write the calibration to the device, export per-board files, archive a snapshot. Without `-d` you pick from the detected devices. |
 | `export -d <name> [-c <file>]` | No | Offline: only split the calibration into per-board files under `<name>/`. |
 | `reset [-y]` | No | Move **everything** in the workspace except `archive/` into `archive/<timestamp>_reset/`, then recreate the sample files. Lists what will be moved and asks for confirmation (`-y` skips it). |

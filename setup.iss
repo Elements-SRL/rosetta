@@ -75,6 +75,83 @@ Root: HKLM; Subkey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environmen
 const
   EnvKeyHKLM = 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment';
 
+var
+  WorkspacePage: TInputDirWizardPage;
+
+{ Workspace saved by a previous `rosetta init` in %APPDATA%\rosetta\config.toml,
+  or '' if there is none. }
+function SavedWorkspace: String;
+var
+  Lines: TArrayOfString;
+  I: Integer;
+  Line: String;
+begin
+  Result := '';
+  if not LoadStringsFromFile(ExpandConstant('{userappdata}\rosetta\config.toml'), Lines) then
+    exit;
+  for I := 0 to GetArrayLength(Lines) - 1 do
+  begin
+    Line := Trim(Lines[I]);
+    if (Pos('workspace', Line) = 1) and (Pos('=', Line) > 0) then
+    begin
+      Line := Trim(Copy(Line, Pos('=', Line) + 1, MaxInt));
+      if Length(Line) < 2 then exit;
+      { The toml crate writes paths as 'literal' strings; "basic" strings
+        escape backslashes. }
+      if Line[1] = '"' then
+        StringChangeEx(Line, '\\', '\', True);
+      Result := Copy(Line, 2, Length(Line) - 2);
+      exit;
+    end;
+  end;
+end;
+
+procedure InitializeWizard;
+var
+  Dir: String;
+begin
+  WorkspacePage := CreateInputDirPage(wpSelectTasks,
+    'Workspace folder', 'Where should Rosetta keep its calibration files?',
+    'Rosetta reads calibration files from this folder and writes the per-board ' +
+    'files and the calibration archive into it. Setup runs "rosetta init" to ' +
+    'create it with a README and sample files; existing files are kept.' + #13#10#13#10 +
+    'You can change it later by running "rosetta init" again.',
+    False, '');
+  WorkspacePage.Add('');
+  Dir := SavedWorkspace;
+  if Dir = '' then
+    Dir := ExpandConstant('{userdocs}\rosetta');
+  WorkspacePage.Values[0] := Dir;
+end;
+
+{ Runs `rosetta init "<workspace>"` as the user who started Setup, so the
+  config lands in their %APPDATA% even when Setup itself is elevated. }
+procedure RunRosettaInit;
+var
+  Dir: String;
+  ResultCode: Integer;
+begin
+  Dir := WorkspacePage.Values[0];
+  { A trailing backslash would escape the closing quote ("C:\x\" -> C:\x"). }
+  if Copy(Dir, Length(Dir), 1) = '\' then
+    Dir := Dir + '.';
+  WizardForm.StatusLabel.Caption := 'Setting up the Rosetta workspace...';
+  if not ExecAsOriginalUser(ExpandConstant('{app}\{#MyAppExeName}'),
+      'init "' + Dir + '"', ExpandConstant('{app}'),
+      SW_HIDE, ewWaitUntilTerminated, ResultCode) or (ResultCode <> 0) then
+    SuppressibleMsgBox('Rosetta was installed, but setting up the workspace in' + #13#10 +
+      WorkspacePage.Values[0] + #13#10 +
+      'failed (code ' + IntToStr(ResultCode) + ').' + #13#10#13#10 +
+      'Open a terminal and run "rosetta init" to set it up.',
+      mbError, MB_OK, IDOK);
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssPostInstall then
+    RunRosettaInit;
+end;
+
 { Semicolon-wrapped compare so C:\rosetta doesn't match inside C:\rosetta-old. }
 function PathMissing(RootKey: Integer; SubKey: String): Boolean;
 var
