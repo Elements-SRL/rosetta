@@ -61,7 +61,8 @@ cargo build --release
 ```
 
 On Windows, `build-installer.ps1` builds an Inno Setup installer (`setup.iss`) that can add
-Rosetta to `PATH`.
+Rosetta to `PATH`. Its finish page offers to run `rosetta init` (checked by default), which opens
+a console asking for the workspace folder.
 
 Terminal help is always available:
 

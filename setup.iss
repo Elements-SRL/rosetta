@@ -60,6 +60,12 @@ Source: "vendor\dlls\MPSSE.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "vendor\dlls\okFrontPanel.dll"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
+[Run]
+; Console where `rosetta init` asks for the workspace folder (Enter accepts the
+; saved one, else Documents\rosetta), then pauses so its output can be read.
+Filename: "{cmd}"; Parameters: "/c """"{app}\{#MyAppExeName}"" init & pause"""; \
+    Description: "Set up the Rosetta workspace now"; Flags: postinstall skipifsilent
+
 [Registry]
 ; PATH lives in a different hive depending on whether the user picked a
 ; per-user or an all-users install, so there is one entry for each.
